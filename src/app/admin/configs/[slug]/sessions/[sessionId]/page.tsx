@@ -15,6 +15,7 @@ interface SessionDetail {
     status: 'active' | 'paused' | 'completed'
     summary: string | null
     advice: string | null
+    recovery_code: string
     created_at: string
     updated_at: string
   }
@@ -135,6 +136,10 @@ export default function SessionDetailPage() {
               <p className="text-gray-500 text-xs mt-0.5">
                 {session.grade}年 {session.class_name}組 {session.seat_number}番 ・ {session.message_count}回やり取り
               </p>
+              {/* 復元コード */}
+              <p className="text-gray-400 text-xs mt-1">
+                復元コード: <span className="font-mono text-gray-600">{session.recovery_code}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -161,7 +166,9 @@ export default function SessionDetailPage() {
                   </svg>
                   <span className="text-green-700 text-sm font-semibold">アドバイス</span>
                 </div>
-                <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green"><ReactMarkdown>{session.advice}</ReactMarkdown></div>
+                <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green">
+                  <ReactMarkdown>{session.advice}</ReactMarkdown>
+                </div>
               </div>
             )}
           </div>
