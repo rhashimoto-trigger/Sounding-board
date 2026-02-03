@@ -299,7 +299,8 @@ export default function ChatPage() {
   // ============================================================
   if (pageState === 'entry') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 py-8 px-4 overflow-y-auto overflow-x-hidden">
+        <div className="w-full max-w-md mx-auto">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-lg">
@@ -309,6 +310,7 @@ export default function ChatPage() {
             </div>
             <h1 className="text-2xl font-bold text-gray-800">壁打ちくん</h1>
             <p className="text-gray-500 text-sm mt-1">先生のチャットに参加してください</p>
+          </div>
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -357,7 +359,8 @@ export default function ChatPage() {
   // ============================================================
   if (pageState === 'input') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 py-8 px-4 overflow-y-auto overflow-x-hidden">
+        <div className="w-full max-w-md mx-auto">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-600 rounded-2xl mb-3 shadow-lg">
@@ -366,6 +369,7 @@ export default function ChatPage() {
               </svg>
             </div>
             <h1 className="text-xl font-bold text-gray-800">あなたの情報を入力してください</h1>
+          </div>
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
