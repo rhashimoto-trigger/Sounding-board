@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
 
 interface SessionDetail {
   session: {
