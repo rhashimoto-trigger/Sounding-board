@@ -95,7 +95,7 @@ export default function CreateConfigPage() {
         {/* ヘッダー */}
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <h1 className="text-lg font-bold text-gray-800">スタデイットチャット</h1>
+            <h1 className="text-lg font-bold text-gray-800">壁打ちくん</h1>
             <span className="text-sm text-gray-500">{session?.user?.email}</span>
           </div>
         </header>
@@ -160,7 +160,7 @@ export default function CreateConfigPage() {
       {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-800">スタデイットチャット</h1>
+          <h1 className="text-lg font-bold text-gray-800">壁打ちくん</h1>
           <span className="text-sm text-gray-500">{session?.user?.email}</span>
         </div>
       </header>
