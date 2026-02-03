@@ -30,7 +30,7 @@ export async function GET(
   // セッション一覧を取得（メッセージ本文は含まない）
   const { data: sessions } = await supabase
     .from('chat_sessions')
-    .select('id, grade, class_name, seat_number, student_name, message_count, status, summary, advice, created_at, updated_at')
+    .select('id, grade, class_name, seat_number, student_name, message_count, status, summary, advice, recovery_code, created_at, updated_at')
     .eq('config_id', config.id)
     .order('created_at', { ascending: false }) as { data: any[] }
 
