@@ -436,7 +436,7 @@ export default function ChatPage() {
   if (pageState === 'advice-shown' && adviceResult) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-5">
               <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mb-3">
