@@ -113,9 +113,20 @@ export async function GET(
     return NextResponse.json({ error: '復元コードが見つかりません。確認してください' }, { status: 404 })
   }
 
-  // 完了済みのセッションは復元不可
+// 完了済みの場合はアドバイス込みで返す（フロント側でアドバイス画面へ）
   if (session.status === 'completed') {
-    return NextResponse.json({ error: 'この会話は既に完了しています' }, { status: 400 })
+    return NextResponse.json({
+      session: {
+        id: session.id,
+        recovery_code: session.recovery_code,
+        message_count: session.message_count,
+        status: session.status,
+        student_name: session.student_name,
+        summary: session.summary,
+        advice: session.advice,
+      },
+      messages: [],
+    })
   }
 
   // paused の場合は active に戻す
