@@ -48,9 +48,9 @@ export default function ConfigSessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [sourceOpen, setSourceOpen] = useState(false)
 
   useEffect(() => {
-    // config の詳細とセッション一覧を並列に取得
     Promise.all([
       fetch(`/api/configs/${slug}`).then((r) => r.json()),
       fetch(`/api/configs/${slug}/sessions`).then((r) => r.json()),
@@ -123,8 +123,8 @@ export default function ConfigSessionsPage() {
 
         {/* URL設定情報カード */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">
                 {config.theme}
               </span>
@@ -132,9 +132,39 @@ export default function ConfigSessionsPage() {
             </div>
             <span className="text-gray-400 text-xs shrink-0">{formatDate(config.created_at)}</span>
           </div>
-          {/* アプローチ・重視点を簡略に表示 */}
-          <div className="flex gap-4 text-xs text-gray-500">
-            <span><span className="text-gray-400">アプローチ:</span> {config.approach.slice(0, 40)}{config.approach.length > 40 ? '...' : ''}</span>
+
+          {/* アプローチ・重視点・ソース */}
+          <div className="flex flex-col gap-3">
+            <div>
+              <p className="text-xs font-semibold text-gray-400 mb-0.5">アプローチ</p>
+              <p className="text-sm text-gray-700">{config.approach}</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-400 mb-0.5">重視すべき点</p>
+              <p className="text-sm text-gray-700">{config.important_points}</p>
+            </div>
+            {config.source_text && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setSourceOpen(!sourceOpen)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-primary-600 transition-colors"
+                >
+                  <svg
+                    className={`w-3.5 h-3.5 transition-transform ${sourceOpen ? 'rotate-90' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  ソース（参照資料）
+                </button>
+                {sourceOpen && (
+                  <div className="mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap">{config.source_text}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
