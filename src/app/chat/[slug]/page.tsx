@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import { useParams } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
 
 // ---- 型定義 ----
 interface Message {
@@ -432,7 +433,7 @@ export default function ChatPage() {
                 </svg>
                 <span className="text-green-700 text-xs font-semibold">アドバイス</span>
               </div>
-              <p className="text-green-800 text-sm leading-relaxed">{adviceResult.advice}</p>
+              <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green"><ReactMarkdown>{adviceResult.advice}</ReactMarkdown></div>
             </div>
 
             {/* 閉じる */}
