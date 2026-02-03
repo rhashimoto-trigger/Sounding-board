@@ -50,6 +50,7 @@ export default function ChatPage() {
   // チャット入力
   const [chatInput, setChatInput] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [isComposing, setIsComposing] = useState(false)
 
   // エラー
   const [error, setError] = useState('')
@@ -564,8 +565,10 @@ export default function ChatPage() {
             <textarea
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
                   e.preventDefault()
                   handleChatSend(e)
                 }
