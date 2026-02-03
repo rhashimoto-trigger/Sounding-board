@@ -479,7 +479,7 @@ export default function ChatPage() {
           {/* 開始メッセージ */}
           {messages.length === 0 && (
             <div className="text-center py-6">
-              <p className="text-gray-400 text-sm">チャットを開始してください</p>
+              <p className="text-gray-400 text-sm">今悩んでいること、考えていることを教えてください。(まとまってなくてもOK！)</p>
             </div>
           )}
 
