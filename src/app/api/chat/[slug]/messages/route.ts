@@ -1,13 +1,20 @@
-import { NextResponse, NextRequest } from 'next/server'
+import { NextRequest } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { callAI } from '@/lib/ai'
+import { callAIStream } from '@/lib/ai'
 
-const MAX_MESSAGES = 50 // 最大往復回数
+export const dynamic = 'force-dynamic'
+
+const MAX_MESSAGES = 50
 
 /**
  * POST /api/chat/[slug]/messages
- * メッセージ送信＋AI返信
+ * メッセージ送信＋AI返信（SSEストリーミング）
  * Body: { session_id, content }
+ *
+ * SSEイベント：
+ *   event: userMessage  → 生徒メッセージの保存結果
+ *   event: chunk        → AIの返信テキスト（途中）
+ *   event: done         → AIメッセージの保存結果 + message_count
  */
 export async function POST(
   req: NextRequest,
@@ -16,7 +23,10 @@ export async function POST(
   const { session_id, content } = await req.json()
 
   if (!session_id || !content) {
-    return NextResponse.json({ error: 'session_id と content が必要です' }, { status: 400 })
+    return new Response(
+      JSON.stringify({ error: 'session_id と content が必要です' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
   // ---- セッション検証 ----
@@ -27,15 +37,24 @@ export async function POST(
     .single() as { data: any }
 
   if (!session) {
-    return NextResponse.json({ error: 'セッションが見つかりません' }, { status: 404 })
+    return new Response(
+      JSON.stringify({ error: 'セッションが見つかりません' }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
   if (session.status !== 'active') {
-    return NextResponse.json({ error: '会話は終了しています' }, { status: 400 })
+    return new Response(
+      JSON.stringify({ error: '会話は終了しています' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
   if (session.message_count >= MAX_MESSAGES) {
-    return NextResponse.json({ error: '会話の上限に達しています' }, { status: 400 })
+    return new Response(
+      JSON.stringify({ error: '会話の上限に達しています' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
   // ---- config（先生設定）を取得 ----
@@ -46,16 +65,18 @@ export async function POST(
     .single() as { data: any }
 
   if (!config) {
-    return NextResponse.json({ error: '設定データが見つかりません' }, { status: 500 })
+    return new Response(
+      JSON.stringify({ error: '設定データが見つかりません' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
   // ---- 生徒のメッセージを保存 ----
-  const userInsert = supabase
+  const { data: userMsgData } = (await supabase
     .from('chat_messages')
     .insert({ session_id, role: 'user', content })
-    .select()
+    .select()) as { data: any[] }
 
-  const { data: userMsgData } = (await userInsert) as { data: any[] }
   const userMessage = userMsgData[0]
 
   // ---- 過去の会話履歴を取得 ----
@@ -69,21 +90,19 @@ export async function POST(
   let systemPrompt = `あなたは高等学校の生徒と対話するAIアシスタントです。
 以下の先生の設定に従って、丁寧かつ親しみやすい日本語で返答してください。
 生徒の学校生活やキャリアに役立つ視点で対話してください。
-特に、考えがはっきり出ていない場合は答えやすい質問をして、その回答にいくつか便乗して頭をほぐしてあげてください。
 
 【テーマ】${config.theme}
 【アプローチ】${config.approach}
 【重視すべき点】${config.important_points}`
 
-  // ソースがある場合は追加
   if (config.source_text) {
     systemPrompt += `\n\n【参照資料】\n${config.source_text}`
   }
 
-  // ---- AI APIを呼び出す ----
-  let aiReplyContent: string
+  // ---- OpenAI ストリーム開始 ----
+  let aiStream: Response
   try {
-    aiReplyContent = await callAI({
+    aiStream = await callAIStream({
       systemPrompt,
       messages: history.map((m) => ({
         role: m.role as 'user' | 'assistant',
@@ -91,28 +110,95 @@ export async function POST(
       })),
     })
   } catch (err: any) {
-    return NextResponse.json({ error: `AI返信に失敗しました: ${err.message}` }, { status: 500 })
+    return new Response(
+      JSON.stringify({ error: `AI返信に失敗しました: ${err.message}` }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
-  // ---- AIの返信を保存 ----
-  const aiInsert = supabase
-    .from('chat_messages')
-    .insert({ session_id, role: 'assistant', content: aiReplyContent })
-    .select()
+  // ---- SSEストリーム構築 ----
+  const sseStream = new ReadableStream({
+    async start(controller) {
+      const encoder = new TextEncoder()
 
-  const { data: aiMsgData } = (await aiInsert) as { data: any[] }
-  const aiMessage = aiMsgData[0]
+      // ① userMessage イベントを送信
+      controller.enqueue(encoder.encode(
+        `event: userMessage\ndata: ${JSON.stringify({
+          id: userMessage.id,
+          role: 'user',
+          content: userMessage.content,
+          created_at: userMessage.created_at,
+        })}\n\n`
+      ))
 
-  // ---- message_count を +1 ----
-  await supabase
-    .from('chat_sessions')
-    .update({ message_count: session.message_count + 1, updated_at: new Date().toISOString() })
-    .eq('id', session_id)
+      // ② OpenAI ストリームを読み取り、chunk イベントを順次送信
+      const reader = aiStream.body!.getReader()
+      const decoder = new TextDecoder()
+      let fullContent = ''
+      let buffer = ''
 
-  // ---- レスポンス ----
-  return NextResponse.json({
-    userMessage: { id: userMessage.id, role: 'user', content: userMessage.content, created_at: userMessage.created_at },
-    aiMessage:   { id: aiMessage.id,   role: 'assistant', content: aiMessage.content, created_at: aiMessage.created_at },
-    message_count: session.message_count + 1,
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+            try {
+              const json = JSON.parse(line.slice(6))
+              const delta = json.choices?.[0]?.delta?.content
+              if (delta) {
+                fullContent += delta
+                controller.enqueue(encoder.encode(
+                  `event: chunk\ndata: ${JSON.stringify(delta)}\n\n`
+                ))
+              }
+            } catch (_e) {
+              // malformed line はスキップ
+            }
+          }
+        }
+      }
+
+      // ③ AI メッセージを DB に保存
+      const { data: aiMsgData } = (await supabase
+        .from('chat_messages')
+        .insert({ session_id, role: 'assistant', content: fullContent })
+        .select()) as { data: any[] }
+
+      const aiMessage = aiMsgData[0]
+
+      // ④ message_count を +1
+      await supabase
+        .from('chat_sessions')
+        .update({ message_count: session.message_count + 1, updated_at: new Date().toISOString() })
+        .eq('id', session_id)
+
+      // ⑤ done イベントを送信
+      controller.enqueue(encoder.encode(
+        `event: done\ndata: ${JSON.stringify({
+          aiMessage: {
+            id: aiMessage.id,
+            role: 'assistant',
+            content: aiMessage.content,
+            created_at: aiMessage.created_at,
+          },
+          message_count: session.message_count + 1,
+        })}\n\n`
+      ))
+
+      controller.close()
+    },
+  })
+
+  return new Response(sseStream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
   })
 }
