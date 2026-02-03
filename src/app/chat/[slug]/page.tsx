@@ -112,11 +112,16 @@ export default function ChatPage() {
       setError(data.error || '復元に失敗しました')
       return
     }
-
     setSession(data.session)
     setMessages(data.messages || [])
-    setPageState('chat')
-  }
+
+    // 完了済みで advice がある場合はアドバイス画面へ直接
+    if (data.session.status === 'completed' && data.session.advice) {
+      setAdviceResult({ summary: data.session.summary || '', advice: data.session.advice })
+      setPageState('advice-shown')
+    } else {
+      setPageState('chat')
+    }
 
   // フォーム送信 → セッション作成
   const handleInfoSubmit = async (e: FormEvent) => {
