@@ -122,6 +122,7 @@ export default function ChatPage() {
     } else {
       setPageState('chat')
     }
+  }
 
   // フォーム送信 → セッション作成
   const handleInfoSubmit = async (e: FormEvent) => {
