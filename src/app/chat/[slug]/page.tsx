@@ -576,7 +576,7 @@ export default function ChatPage() {
               placeholder="メッセージを入力してください（Shift+Enterで改行）"
               rows={2}
               disabled={isSending || remaining <= 0}
-              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 placeholder-gray-400 text-sm disabled:bg-gray-50 disabled:text-gray-400 resize-none"
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 placeholder-gray-400 text-base disabled:bg-gray-50 disabled:text-gray-400 resize-none"
             />
             <button
               type="submit"
