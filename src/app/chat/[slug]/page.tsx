@@ -423,19 +423,6 @@ export default function ChatPage() {
               <p className="text-gray-500 text-sm mt-0.5">以下があなたへのアドバイスです</p>
             </div>
 
-            {/* 要約 */}
-            {adviceResult.summary && (
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-3">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                  <span className="text-blue-700 text-xs font-semibold">会話の要約</span>
-                </div>
-                <p className="text-blue-800 text-sm leading-relaxed">{adviceResult.summary}</p>
-              </div>
-            )}
-
             {/* アドバイス */}
             <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-1.5 mb-1.5">
