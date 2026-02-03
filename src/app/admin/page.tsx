@@ -30,7 +30,6 @@ export default function AdminPage() {
       .catch(() => setIsLoading(false))
   }, [])
 
-  // 日付フォーマット
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('ja-JP', {
@@ -44,7 +43,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <h1 className="text-lg font-bold text-gray-800">スタデイットチャット</h1>
@@ -60,9 +58,7 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* コンテンツ */}
       <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* タイトルバー */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-bold text-gray-800">URL一覧</h2>
@@ -79,12 +75,10 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* ローディング */}
         {isLoading && (
           <div className="text-center py-16 text-gray-400 text-sm">読み込み中...</div>
         )}
 
-        {/* 空状態 */}
         {!isLoading && configs.length === 0 && (
           <div className="bg-white rounded-2xl border border-gray-200 border-dashed p-12 text-center">
             <div className="text-gray-300 text-4xl mb-3">📎</div>
@@ -99,7 +93,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* URL一覧 */}
         {!isLoading && configs.length > 0 && (
           <div className="flex flex-col gap-3">
             {configs.map((config) => (
@@ -109,7 +102,6 @@ export default function AdminPage() {
                 className="bg-white rounded-2xl border border-gray-200 hover:border-primary-300 hover:shadow-sm p-5 text-left transition-all group"
               >
                 <div className="flex items-start justify-between gap-3">
-                  {/* 左側：テーマ・URL */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">
@@ -119,3 +111,10 @@ export default function AdminPage() {
                     <p className="text-gray-500 text-xs font-mono truncate">
                       /chat/{config.slug}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-gray-400 text-xs">{formatDate(config.created_at)}</span>
+                    <svg className="w-4 h-4 text-gray-300 group-hover:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
