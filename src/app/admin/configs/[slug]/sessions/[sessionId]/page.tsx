@@ -160,7 +160,7 @@ export default function SessionDetailPage() {
                   </svg>
                   <span className="text-green-700 text-sm font-semibold">アドバイス</span>
                 </div>
-                <p className="text-green-800 text-sm leading-relaxed">{session.advice}</p>
+                <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green"><ReactMarkdown>{session.advice}</ReactMarkdown></div>
               </div>
             )}
           </div>
