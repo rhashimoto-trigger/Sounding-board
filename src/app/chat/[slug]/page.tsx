@@ -503,7 +503,7 @@ export default function ChatPage() {
         <div className="max-w-2xl mx-auto px-4 py-4 flex flex-col gap-3">
           {messages.length === 0 && (
             <div className="text-center py-6">
-              <p className="text-gray-400 text-sm">チャットを開始してください</p>
+              <p className="text-gray-400 text-sm">今、考えていること、悩んでいることを書いてください。(まとまっていなくてOKです👍)</p>
             </div>
           )}
 
