@@ -53,6 +53,9 @@ export default function ChatPage() {
   const [isSending, setIsSending] = useState(false)
   const [isComposing, setIsComposing] = useState(false)
 
+  // ストリーミング中のAIメッセージID
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+
   // エラー
   const [error, setError] = useState('')
 
@@ -127,30 +130,95 @@ export default function ChatPage() {
     setPageState('chat')
   }
 
-  // チャット送信 → AI返信
+  // チャット送信 → AIストリーミング返信
   const handleChatSend = async (e: any) => {
     e.preventDefault()
     if (!chatInput.trim() || isSending || !session) return
+
+    const currentInput = chatInput.trim()
+    setChatInput('')
     setError('')
     setIsSending(true)
 
-    const res = await fetch(`/api/chat/${slug}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: session.id, content: chatInput.trim() }),
-    })
-    const data = await res.json()
+    // 一時ID
+    const tempUserId = 'temp-user-' + Date.now()
+    const tempAiId   = 'temp-ai-' + Date.now()
 
-    setIsSending(false)
+    // オプティミスティック更新：生徒メッセージ＋空のAIメッセージを即座に表示
+    setMessages((prev) => [
+      ...prev,
+      { id: tempUserId, role: 'user',      content: currentInput,        created_at: new Date().toISOString() },
+      { id: tempAiId,   role: 'assistant', content: '',                  created_at: new Date().toISOString() },
+    ])
+    setStreamingMessageId(tempAiId)
 
-    if (!res.ok) {
-      setError(data.error || 'メッセージ送信に失敗しました')
-      return
+    try {
+      const res = await fetch(`/api/chat/${slug}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: session.id, content: currentInput }),
+      })
+
+      if (!res.ok || !res.body) {
+        // エラー時はオプティミスティックメッセージを削除
+        setMessages((prev) => prev.filter((m) => m.id !== tempUserId && m.id !== tempAiId))
+        const data = await res.json()
+        setError(data.error || 'メッセージ送信に失敗しました')
+        setStreamingMessageId(null)
+        setIsSending(false)
+        return
+      }
+
+      // SSEストリームを読み取る
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let currentEvent = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.slice(7).trim()
+          } else if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim()
+
+            if (currentEvent === 'userMessage') {
+              // 一時の生徒メッセージを保存済みのものに置換
+              const userMsg = JSON.parse(data)
+              setMessages((prev) => prev.map((m) => m.id === tempUserId ? userMsg : m))
+
+            } else if (currentEvent === 'chunk') {
+              // AIの返信を逐次追加
+              const chunkText: string = JSON.parse(data)
+              setMessages((prev) => prev.map((m) =>
+                m.id === tempAiId ? { ...m, content: m.content + chunkText } : m
+              ))
+
+            } else if (currentEvent === 'done') {
+              // 一時のAIメッセージを保存済みのものに置換・message_count更新
+              const { aiMessage, message_count } = JSON.parse(data)
+              setMessages((prev) => prev.map((m) => m.id === tempAiId ? aiMessage : m))
+              setSession((prev) => prev ? { ...prev, message_count } : prev)
+            }
+
+            currentEvent = ''
+          }
+        }
+      }
+    } catch (_err) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempUserId && m.id !== tempAiId))
+      setError('メッセージ送信に失敗しました')
     }
 
-    setChatInput('')
-    setMessages((prev) => [...prev, data.userMessage, data.aiMessage])
-    setSession((prev) => prev ? { ...prev, message_count: data.message_count } : prev)
+    setStreamingMessageId(null)
+    setIsSending(false)
   }
 
   // 保存して退出する
@@ -173,7 +241,6 @@ export default function ChatPage() {
       return
     }
 
-    // 復元コード表示画面へ
     setPageState('recovery-shown')
   }
 
@@ -214,7 +281,6 @@ export default function ChatPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          {/* ロゴ */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4 shadow-lg">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +292,6 @@ export default function ChatPage() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            {/* 新規開始 */}
             <button
               onClick={handleNewStart}
               className="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-xl transition-colors shadow-md shadow-primary-200 mb-3"
@@ -234,14 +299,12 @@ export default function ChatPage() {
               新規で開始する
             </button>
 
-            {/* 区切り */}
             <div className="flex items-center gap-3 my-4">
               <div className="flex-1 h-px bg-gray-200" />
               <span className="text-gray-400 text-xs">または</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
 
-            {/* 復元コード入力 */}
             <p className="text-gray-600 text-sm font-medium mb-2">途中から続ける場合</p>
             <input
               type="text"
@@ -258,7 +321,6 @@ export default function ChatPage() {
               {isSending ? '復元中...' : '復元する'}
             </button>
 
-            {/* エラー */}
             {error && (
               <div className="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                 {error}
@@ -277,7 +339,6 @@ export default function ChatPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
-          {/* ロゴ */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-600 rounded-2xl mb-3 shadow-lg">
               <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,77 +350,41 @@ export default function ChatPage() {
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <form onSubmit={handleInfoSubmit} noValidate>
-              {/* 学年・クラス・出席番号は1行に並べる */}
               <div className="flex gap-3 mb-4">
                 <div className="flex-1">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">学年</label>
-                  <input
-                    type="text"
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    placeholder="3"
-                    required
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm text-center"
-                  />
+                  <input type="text" value={grade} onChange={(e) => setGrade(e.target.value)} placeholder="3" required
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm text-center" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">クラス</label>
-                  <input
-                    type="text"
-                    value={className}
-                    onChange={(e) => setClassName(e.target.value)}
-                    placeholder="A"
-                    required
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm text-center"
-                  />
+                  <input type="text" value={className} onChange={(e) => setClassName(e.target.value)} placeholder="A" required
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm text-center" />
                 </div>
                 <div className="flex-1">
                   <label className="block text-xs font-semibold text-gray-600 mb-1">出席番号</label>
-                  <input
-                    type="text"
-                    value={seatNumber}
-                    onChange={(e) => setSeatNumber(e.target.value)}
-                    placeholder="12"
-                    required
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm text-center"
-                  />
+                  <input type="text" value={seatNumber} onChange={(e) => setSeatNumber(e.target.value)} placeholder="12" required
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm text-center" />
                 </div>
               </div>
 
-              {/* 氏名 */}
               <div className="mb-5">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">氏名</label>
-                <input
-                  type="text"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
-                  placeholder="田中太郎"
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm"
-                />
+                <input type="text" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="田中太郎" required
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 text-sm" />
               </div>
 
-              {/* エラー */}
               {error && (
-                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                  {error}
-                </div>
+                <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">{error}</div>
               )}
 
-              {/* ボタン */}
               <div className="flex gap-3">
-                <button
-                  type="submit"
-                  disabled={isSending}
-                  className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-medium rounded-xl transition-colors"
-                >
+                <button type="submit" disabled={isSending}
+                  className="flex-1 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-medium rounded-xl transition-colors">
                   {isSending ? '開始中...' : 'チャットを開始する'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setPageState('entry'); setError('') }}
-                  className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors"
-                >
+                <button type="button" onClick={() => { setPageState('entry'); setError('') }}
+                  className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors">
                   戻る
                 </button>
               </div>
@@ -371,7 +396,7 @@ export default function ChatPage() {
   }
 
   // ============================================================
-  // ③ 復元コード表示画面（保存して退出した後）
+  // ③ 復元コード表示画面
   // ============================================================
   if (pageState === 'recovery-shown' && session) {
     return (
@@ -386,7 +411,6 @@ export default function ChatPage() {
             <h2 className="text-lg font-bold text-gray-800 mb-2">保存して退出しました</h2>
             <p className="text-gray-500 text-sm mb-5">次回続けるときは、以下の復元コードを使ってください</p>
 
-            {/* 復元コード */}
             <div className="bg-gray-50 rounded-xl border border-gray-200 px-4 py-3 mb-5">
               <p className="text-xs text-gray-400 mb-1">復元コード</p>
               <p className="text-xl font-bold font-mono text-gray-800 tracking-widest">{session.recovery_code}</p>
@@ -407,14 +431,13 @@ export default function ChatPage() {
   }
 
   // ============================================================
-  // ④ アドバイス表示画面（アドバイスを頂いた後）
+  // ④ アドバイス表示画面
   // ============================================================
   if (pageState === 'advice-shown' && adviceResult) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-100 flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            {/* アイコン */}
             <div className="text-center mb-5">
               <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mb-3">
                 <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -425,7 +448,7 @@ export default function ChatPage() {
               <p className="text-gray-500 text-sm mt-0.5">以下があなたへのアドバイスです</p>
             </div>
 
-            {/* アドバイス */}
+            {/* アドバイス（マークダウン） */}
             <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -433,10 +456,11 @@ export default function ChatPage() {
                 </svg>
                 <span className="text-green-700 text-xs font-semibold">アドバイス</span>
               </div>
-              <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green"><ReactMarkdown>{adviceResult.advice}</ReactMarkdown></div>
+              <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green">
+                <ReactMarkdown>{adviceResult.advice}</ReactMarkdown>
+              </div>
             </div>
 
-            {/* 閉じる */}
             <button
               onClick={() => { setPageState('entry'); setRecoveryInput(''); setError('') }}
               className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-colors"
@@ -461,7 +485,6 @@ export default function ChatPage() {
             <h1 className="text-sm font-bold text-gray-800">壁打ちくん</h1>
             <p className="text-xs text-gray-400">{session?.student_name} さん</p>
           </div>
-          {/* 残り回数バッジ */}
           <div className="flex items-center gap-2">
             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
               ${remaining <= 10 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}
@@ -478,10 +501,9 @@ export default function ChatPage() {
       {/* チャットエリア */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-4 flex flex-col gap-3">
-          {/* 開始メッセージ */}
           {messages.length === 0 && (
             <div className="text-center py-6">
-              <p className="text-gray-400 text-sm">今悩んでいること、考えていることを教えてください。(まとまってなくてもOK！)</p>
+              <p className="text-gray-400 text-sm">チャットを開始してください</p>
             </div>
           )}
 
@@ -502,25 +524,19 @@ export default function ChatPage() {
                   : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
                 }`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                {/* ストリーミング中で空の場合は「返信中...」を表示 */}
+                {msg.role === 'assistant' && msg.id === streamingMessageId && msg.content === '' ? (
+                  <p className="text-sm text-gray-400">返信中...</p>
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                )}
+
                 <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-right text-primary-200' : 'text-left text-gray-400'}`}>
                   {formatTime(msg.created_at)}
                 </p>
               </div>
             </div>
           ))}
-
-          {/* 送信中インディケーター */}
-          {isSending && (
-            <div className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
-                <span className="text-gray-600 text-xs font-bold">AI</span>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
-                <p className="text-gray-400 text-sm">返信中...</p>
-              </div>
-            </div>
-          )}
 
           {/* エラー */}
           {error && (
@@ -555,7 +571,7 @@ export default function ChatPage() {
             <button
               onClick={handleEndSession}
               disabled={isSending}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 text-sm font-medium rounded-xl transition-colors"
+              className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 text-sm font-medium rounded-xl transition-colors"
             >
               {isSending ? '処理中...' : '保存して退出する'}
             </button>
@@ -574,7 +590,7 @@ export default function ChatPage() {
                   handleChatSend(e)
                 }
               }}
-              placeholder="メッセージを入力してください（Shift+Enterで改行）"
+              placeholder="メッセージを入力してください"
               rows={2}
               disabled={isSending || remaining <= 0}
               className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 placeholder-gray-400 text-base disabled:bg-gray-50 disabled:text-gray-400 resize-none"
@@ -590,7 +606,6 @@ export default function ChatPage() {
             </button>
           </form>
 
-          {/* 上限に達した場合 */}
           {remaining <= 0 && (
             <p className="text-center text-red-500 text-xs mt-2">
               会話の上限に達しました。アドバイスを頂くか、保存して退出してください。
