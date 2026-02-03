@@ -601,7 +601,7 @@ export default function ChatPage() {
 
           {messages.length === 0 && !isCompleted && (
             <div className="text-center py-6">
-              <p className="text-gray-400 text-sm">チャットを開始してください</p>
+              <p className="text-gray-400 text-sm">困っていること、悩んでいることを教えてください。（まとまっていなくてもOKです👍）</p>
             </div>
           )}
 
