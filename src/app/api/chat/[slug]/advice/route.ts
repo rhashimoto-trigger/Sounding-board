@@ -120,3 +120,24 @@ ${contextInfo}
           role: 'user',
           content: `以下の会話の要約を読んで、生徒へのアドバイスを作成してください。\n\n【会話の要約】\n${summary}\n\n【会話の詳細】\n${conversationText}`,
         },
+
+        ],
+    })
+  } catch (err: any) {
+    console.error('アドバイス生成エラー:', err.message)
+    advice = 'アドバイスの生成に失敗しました。先生に相談してください。'
+  }
+
+  // ---- summary・advice を保存・status を completed へ ----
+  await supabase
+    .from('chat_sessions')
+    .update({
+      status: 'completed',
+      summary: summary || null,
+      advice:  advice  || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', session_id)
+
+  return NextResponse.json({ summary, advice })
+}
