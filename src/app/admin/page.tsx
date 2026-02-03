@@ -61,7 +61,7 @@ export default function AdminPage() {
       {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-800">スタデイットチャット</h1>
+          <h1 className="text-lg font-bold text-gray-800">壁打ちくん</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-500 hidden sm:inline">{session?.user?.email}</span>
             <button
