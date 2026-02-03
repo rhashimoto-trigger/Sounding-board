@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 export default function AdminPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [configs, setConfigs] = useState([])
+  const [configs, setConfigs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
