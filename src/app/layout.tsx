@@ -3,8 +3,8 @@ import './globals.css'
 import Providers from './providers'
 
 export const metadata: Metadata = {
-  title: 'スタデイットチャット',
-  description: '高等学校向けAIチャットサービス',
+  title: '壁打ちくん',
+  description: '高等学校向け壁打ちサービス',
 }
 
 export default function RootLayout({
