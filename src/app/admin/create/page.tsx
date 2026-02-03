@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react'
 // テーマのプレセット
 const THEME_PRESETS = [
   { value: '進路相談', label: '進路相談' },
-  { value: '探究テーマ相談', label: '探究テーマ相談' },
+  { value: '探究学習の相談', label: '探究学習の相談' },
   { value: '学習方法の相談', label: '学習方法の相談' },
   { value: 'その他', label: 'その他（自由入力）' },
 ]
