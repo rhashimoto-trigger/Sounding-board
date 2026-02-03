@@ -20,7 +20,7 @@ export default function AdminPage() {
       .catch(() => setIsLoading(false))
   }, [])
 
-  const formatDate = (dateStr) => {
+    const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('ja-JP', {
       year: 'numeric',
