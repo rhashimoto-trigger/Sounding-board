@@ -126,7 +126,7 @@ export default function ChatPage() {
   }
 
   // チャット送信 → AI返信
-  const handleChatSend = async (e: FormEvent) => {
+  const handleChatSend = async (e: any) => {
     e.preventDefault()
     if (!chatInput.trim() || isSending || !session) return
     setError('')
@@ -151,7 +151,7 @@ export default function ChatPage() {
     setSession((prev) => prev ? { ...prev, message_count: data.message_count } : prev)
   }
 
-  // 途中で終了する
+  // 保存して退出する
   const handleEndSession = async () => {
     if (!session) return
     setIsSending(true)
@@ -167,7 +167,7 @@ export default function ChatPage() {
     setIsSending(false)
 
     if (!res.ok) {
-      setError(data.error || '途中終了に失敗しました')
+      setError(data.error || '保存に失敗しました')
       return
     }
 
@@ -369,7 +369,7 @@ export default function ChatPage() {
   }
 
   // ============================================================
-  // ③ 復元コード表示画面（途中終了後）
+  // ③ 復元コード表示画面（保存して退出した後）
   // ============================================================
   if (pageState === 'recovery-shown' && session) {
     return (
@@ -381,7 +381,7 @@ export default function ChatPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-gray-800 mb-2">途中で終了しました</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-2">保存して退出しました</h2>
             <p className="text-gray-500 text-sm mb-5">次回続けるときは、以下の復元コードを使ってください</p>
 
             {/* 復元コード */}
@@ -549,7 +549,7 @@ export default function ChatPage() {
       <div className="bg-white border-t border-gray-200 px-4 py-3 shrink-0">
         <div className="max-w-2xl mx-auto">
 
-          {/* アドバイス・途中終了ボタン */}
+          {/* アドバイス・保存退出ボタン */}
           <div className={`flex gap-2 mb-3 ${showAdviceBtn ? '' : 'justify-end'}`}>
             {showAdviceBtn && (
               <button
@@ -568,19 +568,25 @@ export default function ChatPage() {
               disabled={isSending}
               className="px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 text-sm font-medium rounded-xl transition-colors"
             >
-              {isSending ? '処理中...' : '途中で終了する'}
+              {isSending ? '処理中...' : '保存して退出する'}
             </button>
           </div>
 
           {/* チャット入力フォーム */}
-          <form onSubmit={handleChatSend} className="flex gap-2">
-            <input
-              type="text"
+          <form onSubmit={handleChatSend} className="flex gap-2 items-end">
+            <textarea
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              placeholder="メッセージを入力してください"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleChatSend(e)
+                }
+              }}
+              placeholder="メッセージを入力してください（Shift+Enterで改行）"
+              rows={2}
               disabled={isSending || remaining <= 0}
-              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 placeholder-gray-400 text-sm disabled:bg-gray-50 disabled:text-gray-400"
+              className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 placeholder-gray-400 text-sm disabled:bg-gray-50 disabled:text-gray-400 resize-none"
             />
             <button
               type="submit"
@@ -596,7 +602,7 @@ export default function ChatPage() {
           {/* 上限に達した場合 */}
           {remaining <= 0 && (
             <p className="text-center text-red-500 text-xs mt-2">
-              会話の上限に達しました。アドバイスを頂くか、途中で終了してください。
+              会話の上限に達しました。アドバイスを頂くか、保存して退出してください。
             </p>
           )}
         </div>
