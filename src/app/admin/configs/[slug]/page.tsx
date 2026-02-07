@@ -116,7 +116,10 @@ export default function ConfigSessionsPage() {
       {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-800">壁打ちくん</h1>
+          <div>
+            <h1 className="text-lg font-bold text-gray-800">{config.title}</h1>
+            <p className="text-xs text-gray-400">壁打ちくん</p>
+          </div>
         </div>
       </header>
 
