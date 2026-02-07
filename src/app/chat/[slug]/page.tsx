@@ -122,6 +122,7 @@ export default function ChatPage() {
       return
     }
     setSession(data.session)
+    setConfig(data.config)
     setMessages(data.messages || [])
 
     // 完了済みで advice がある場合はアドバイス画面へ直接
