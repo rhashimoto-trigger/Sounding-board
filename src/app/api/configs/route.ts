@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   // リクエストボディの取得
-  const { theme, approach, important_points, source_text } = await req.json()
+  const { theme, approach, important_points, source_text, allow_student_privacy_toggle } = await req.json()
 
   // バリデーション
   if (!theme || !approach || !important_points) {
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       approach,
       important_points,
       source_text: source_text || null,
+      allow_student_privacy_toggle: allow_student_privacy_toggle || false,
     })
     .select()
 
