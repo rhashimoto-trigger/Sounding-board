@@ -17,6 +17,7 @@ export default function CreateConfigPage() {
   const router = useRouter()
 
   // フォーム値
+  const [title, setTitle] = useState('')
   const [theme, setTheme] = useState('')
   const [customTheme, setCustomTheme] = useState('')
   const [approach, setApproach] = useState('')
@@ -41,6 +42,11 @@ export default function CreateConfigPage() {
     const themeValue = getThemeValue()
 
     // バリデーション
+    if (!title.trim()) {
+      setError('タイトルを入力してください')
+      setIsLoading(false)
+      return
+    }
     if (!themeValue.trim()) {
       setError('テーマを入力してください')
       setIsLoading(false)
@@ -62,6 +68,7 @@ export default function CreateConfigPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        title: title.trim(),
         theme: themeValue.trim(),
         approach: approach.trim(),
         important_points: importantPoints.trim(),
@@ -90,7 +97,6 @@ export default function CreateConfigPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // URL生成成功後の画面
   // URL生成成功後の画面
   if (generatedUrl) {
     const displayTheme = getThemeValue()
@@ -134,6 +140,12 @@ export default function CreateConfigPage() {
                 設定内容を確認
               </summary>
               <div className="px-4 pb-4 pt-2 space-y-4">
+                {/* タイトル */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">タイトル</p>
+                  <p className="text-sm text-gray-800">{title}</p>
+                </div>
+
                 {/* テーマ */}
                 <div>
                   <p className="text-xs font-semibold text-gray-500 mb-1">テーマ</p>
@@ -192,6 +204,7 @@ export default function CreateConfigPage() {
               <button
                 onClick={() => {
                   setGeneratedUrl('')
+                  setTitle('')
                   setTheme('')
                   setCustomTheme('')
                   setApproach('')
@@ -232,6 +245,21 @@ export default function CreateConfigPage() {
           <p className="text-gray-500 text-sm mb-6">生徒に共有するチャットURLの設計図を作成します</p>
 
           <form onSubmit={handleSubmit} noValidate>
+            {/* タイトル */}
+            <div className="mb-5">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                タイトル <span className="text-red-500">*</span>
+              </label>
+              <p className="text-xs text-gray-400 mb-2">生徒に表示されるタイトル（例：3年A組 進路相談）</p>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="例：3年A組 進路相談"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all text-gray-800 placeholder-gray-400 text-sm"
+              />
+            </div>
+
             {/* テーマ */}
             <div className="mb-5">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -340,7 +368,7 @@ export default function CreateConfigPage() {
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                disabled={isLoading || !theme}
+                disabled={isLoading || !title || !theme}
                 className="px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-medium rounded-xl transition-colors shadow-md shadow-primary-200"
               >
                 {isLoading ? 'URL生成中...' : 'URLを生成する'}
