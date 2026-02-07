@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 interface Config {
   id: string
   slug: string
+  title: string
   theme: string
   approach: string
   important_points: string
@@ -126,8 +127,9 @@ export default function AdminPage() {
                   {/* 左側：テーマ・URL */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">
-                        {config.theme}
+                      <span className="font-bold text-gray-800 text-sm">{c.title}</span>
+                      <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full self-start">
+                        {c.theme}
                       </span>
                     </div>
                     {/* URL + コピーボタン */}
