@@ -23,6 +23,7 @@ interface SessionDetail {
   config: {
     id: string
     slug: string
+    title: string
     theme: string
   }
   messages: {
@@ -114,7 +115,7 @@ export default function SessionDetailPage() {
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-4 flex-wrap">
           <button onClick={() => router.push('/admin')} className="hover:text-primary-600 transition-colors">一覧</button>
           <span>›</span>
-          <button onClick={() => router.push(`/admin/configs/${slug}`)} className="hover:text-primary-600 transition-colors">{config.theme}</button>
+          <button onClick={() => router.push(`/admin/configs/${slug}`)} className="hover:text-primary-600 transition-colors">{config.title}</button>
           <span>›</span>
           <span className="text-gray-600 font-medium">{session.student_name}</span>
         </div>
