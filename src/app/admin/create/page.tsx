@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react'
 // テーマのプレセット
 const THEME_PRESETS = [
   { value: '進路相談', label: '進路相談' },
-  { value: '探究学習の相談', label: '探究学習の相談' },
+  { value: '探究学習相談', label: '探究学習相談' },
   { value: '学習方法の相談', label: '学習方法の相談' },
   { value: 'その他', label: 'その他（自由入力）' },
 ]
@@ -22,11 +22,12 @@ export default function CreateConfigPage() {
   const [approach, setApproach] = useState('')
   const [importantPoints, setImportantPoints] = useState('')
   const [sourceText, setSourceText] = useState('')
+  const [allowStudentPrivacyToggle, setAllowStudentPrivacyToggle] = useState(false)
 
   // 状態
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [generatedUrl, setGeneratedUrl] = useState('')  // 生成されたURL
+  const [generatedUrl, setGeneratedUrl] = useState('')
   const [copied, setCopied] = useState(false)
 
   // テーマ値の取得（プレセットかカスタム）
@@ -65,6 +66,7 @@ export default function CreateConfigPage() {
         approach: approach.trim(),
         important_points: importantPoints.trim(),
         source_text: sourceText.trim() || null,
+        allow_student_privacy_toggle: allowStudentPrivacyToggle,
       }),
     })
 
@@ -92,7 +94,6 @@ export default function CreateConfigPage() {
   if (generatedUrl) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* ヘッダー */}
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="max-w-3xl mx-auto flex items-center justify-between">
             <h1 className="text-lg font-bold text-gray-800">壁打ちくん</h1>
@@ -100,10 +101,8 @@ export default function CreateConfigPage() {
           </div>
         </header>
 
-        {/* コンテンツ */}
         <main className="max-w-3xl mx-auto px-6 py-10">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-            {/* アイコン */}
             <div className="inline-flex items-center justify-center w-16 h-16 bg-accent-500 rounded-full mb-5">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -113,7 +112,6 @@ export default function CreateConfigPage() {
             <h2 className="text-xl font-bold text-gray-800 mb-2">URL生成完了！</h2>
             <p className="text-gray-500 text-sm mb-6">以下のURLを生徒に共有してください</p>
 
-            {/* 生成URL */}
             <div className="bg-gray-50 rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-3 mb-6">
               <span className="text-primary-600 font-mono text-sm truncate flex-1 text-left">
                 {generatedUrl}
@@ -126,7 +124,6 @@ export default function CreateConfigPage() {
               </button>
             </div>
 
-            {/* アクション */}
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => router.push('/admin')}
@@ -142,6 +139,7 @@ export default function CreateConfigPage() {
                   setApproach('')
                   setImportantPoints('')
                   setSourceText('')
+                  setAllowStudentPrivacyToggle(false)
                 }}
                 className="px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-colors"
               >
@@ -157,7 +155,6 @@ export default function CreateConfigPage() {
   // フォーム画面
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <h1 className="text-lg font-bold text-gray-800">壁打ちくん</h1>
@@ -165,9 +162,7 @@ export default function CreateConfigPage() {
         </div>
       </header>
 
-      {/* コンテンツ */}
       <main className="max-w-3xl mx-auto px-6 py-8">
-        {/* パンクラム */}
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
           <button onClick={() => router.push('/admin')} className="hover:text-primary-600 transition-colors">一覧</button>
           <span>›</span>
@@ -200,7 +195,6 @@ export default function CreateConfigPage() {
                   </button>
                 ))}
               </div>
-              {/* その他の場合は自由入力 */}
               {theme === 'その他' && (
                 <input
                   type="text"
@@ -243,7 +237,7 @@ export default function CreateConfigPage() {
             </div>
 
             {/* ソース（オプション） */}
-            <div className="mb-7">
+            <div className="mb-5">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 ソース <span className="text-gray-400 font-normal">（オプション）</span>
               </label>
@@ -255,6 +249,26 @@ export default function CreateConfigPage() {
                 rows={4}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all text-gray-800 placeholder-gray-400 text-sm resize-none"
               />
+            </div>
+
+            {/* プライバシー設定 */}
+            <div className="mb-7">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allowStudentPrivacyToggle}
+                    onChange={(e) => setAllowStudentPrivacyToggle(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 text-primary-600 rounded focus:ring-2 focus:ring-primary-100"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-semibold text-gray-700">生徒がプライバシー設定を変更できるようにする</span>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ONにすると、生徒が自分で「会話を先生に見せる/見せない」を選択できます。見せない設定の場合、先生側では会話内容が表示されません。
+                    </p>
+                  </div>
+                </label>
+              </div>
             </div>
 
             {/* エラーメッセージ */}
