@@ -23,9 +23,8 @@ export async function callAI({
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      temperature: 0.7,
-      max_tokens: 1500,
+      model: 'gpt-5-mini',
+      max_completion_tokens: 1500,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages,
@@ -73,9 +72,8 @@ export async function callAIStream({
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'gpt-4o',
-      temperature: 0.7,
-      max_tokens: 1500,
+      model: 'gpt-5-mini',
+      max_completion_tokens: 1500,
       stream: true,
       messages: [
         { role: 'system', content: systemPrompt },
