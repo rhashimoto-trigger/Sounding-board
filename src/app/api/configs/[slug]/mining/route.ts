@@ -69,7 +69,6 @@ async function generateSummary(sessionId: string, theme: string): Promise<string
 ${conversation}`,
       },
     ],
-    temperature: 0.7,
     max_completion_tokens: 500,
   })
 
@@ -165,7 +164,6 @@ ${summariesText}
 ※ JSONのみを出力し、他の説明は不要です`,
       },
     ],
-    temperature: 0.7,
     max_completion_tokens: 2000,
   })
 
