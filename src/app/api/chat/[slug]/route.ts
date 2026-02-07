@@ -14,9 +14,9 @@ export async function POST(
   // slugからconfigを取得
   const { data: config } = await supabase
     .from('chat_configs')
-    .select('id, allow_student_privacy_toggle')
+    .select('id, title, allow_student_privacy_toggle')
     .eq('slug', params.slug)
-    .single() as { data: { id: string; allow_student_privacy_toggle: boolean } | null }
+    .single() as { data: { id: string; title: string; allow_student_privacy_toggle: boolean } | null }
 
   if (!config) {
     return NextResponse.json({ error: 'このURLは存在しないか、無効です' }, { status: 404 })
@@ -75,6 +75,7 @@ export async function POST(
       hide_messages_from_teacher: data[0].hide_messages_from_teacher,
     },
     config: {
+      title: config.title,
       allow_student_privacy_toggle: config.allow_student_privacy_toggle,
     },
     messages: [],
@@ -98,9 +99,9 @@ export async function GET(
   // slugからconfigを取得
   const { data: config } = await supabase
     .from('chat_configs')
-    .select('id, allow_student_privacy_toggle')
+    .select('id, title, allow_student_privacy_toggle')
     .eq('slug', params.slug)
-    .single() as { data: { id: string; allow_student_privacy_toggle: boolean } | null }
+    .single() as { data: { id: string; title: string; allow_student_privacy_toggle: boolean } | null }
 
   if (!config) {
     return NextResponse.json({ error: 'このURLは存在しないか、無効です' }, { status: 404 })
@@ -132,6 +133,7 @@ export async function GET(
         hide_messages_from_teacher: session.hide_messages_from_teacher,
       },
       config: {
+        title: config.title,
         allow_student_privacy_toggle: config.allow_student_privacy_toggle,
       },
       messages: [],
@@ -163,6 +165,7 @@ export async function GET(
       hide_messages_from_teacher: session.hide_messages_from_teacher,
     },
     config: {
+      title: config.title,
       allow_student_privacy_toggle: config.allow_student_privacy_toggle,
     },
     messages: messages || [],
