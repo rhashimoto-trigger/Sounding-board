@@ -599,23 +599,45 @@ export default function ChatPage() {
   // ============================================================
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* ヘッダー */}
+     {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 px-4 py-3 shrink-0">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-sm font-bold text-gray-800">壁打ちくん</h1>
-            <p className="text-xs text-gray-400">{session?.student_name} さん</p>
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-sm font-bold text-gray-800">壁打ちくん</h1>
+              <p className="text-xs text-gray-400">{session?.student_name} さん</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
+                ${remaining <= 10 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                残り {remaining} 回
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold
-              ${remaining <= 10 ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              残り {remaining} 回
-            </span>
-          </div>
+
+          {/* プライバシートグル（許可されている場合のみ） */}
+          {config?.allow_student_privacy_toggle && !isCompleted && (
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+              <span className="text-xs text-gray-500">先生に会話を見せない</span>
+              <button
+                onClick={handlePrivacyToggle}
+                disabled={isUpdatingPrivacy}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  session?.hide_messages_from_teacher ? 'bg-primary-600' : 'bg-gray-300'
+                } ${isUpdatingPrivacy ? 'opacity-50' : ''}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    session?.hide_messages_from_teacher ? 'translate-x-5' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
