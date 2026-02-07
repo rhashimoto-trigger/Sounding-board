@@ -38,16 +38,20 @@ export async function GET(
     return NextResponse.json({ error: 'アクセス権がありません' }, { status: 403 })
   }
 
-  // メッセージ一覧を取得
-  const { data: messages } = await supabase
-    .from('chat_messages')
-    .select('id, role, content, created_at')
-    .eq('session_id', params.sessionId)
-    .order('created_at', { ascending: true }) as { data: any[] }
+  // メッセージ一覧を取得（プライバシー保護中の場合は空配列）
+  let messages: any[] = []
+  if (!session.hide_messages_from_teacher) {
+    const { data } = await supabase
+      .from('chat_messages')
+      .select('id, role, content, created_at')
+      .eq('session_id', params.sessionId)
+      .order('created_at', { ascending: true }) as { data: any[] }
+    messages = data || []
+  }
 
   return NextResponse.json({
     session,
     config,
-    messages: messages || [],
+    messages,
   })
 }
