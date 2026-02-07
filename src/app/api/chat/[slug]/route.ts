@@ -14,9 +14,9 @@ export async function POST(
   // slugからconfigを取得
   const { data: config } = await supabase
     .from('chat_configs')
-    .select('id')
+    .select('id, allow_student_privacy_toggle')
     .eq('slug', params.slug)
-    .single() as { data: { id: string } | null }
+    .single() as { data: { id: string; allow_student_privacy_toggle: boolean } | null }
 
   if (!config) {
     return NextResponse.json({ error: 'このURLは存在しないか、無効です' }, { status: 404 })
@@ -55,6 +55,7 @@ export async function POST(
       status: 'active',
       summary: null,
       advice: null,
+      hide_messages_from_teacher: false,
     })
     .select()
 
@@ -71,6 +72,10 @@ export async function POST(
       message_count: data[0].message_count,
       status: data[0].status,
       student_name: data[0].student_name,
+      hide_messages_from_teacher: data[0].hide_messages_from_teacher,
+    },
+    config: {
+      allow_student_privacy_toggle: config.allow_student_privacy_toggle,
     },
     messages: [],
   })
@@ -93,9 +98,9 @@ export async function GET(
   // slugからconfigを取得
   const { data: config } = await supabase
     .from('chat_configs')
-    .select('id')
+    .select('id, allow_student_privacy_toggle')
     .eq('slug', params.slug)
-    .single() as { data: { id: string } | null }
+    .single() as { data: { id: string; allow_student_privacy_toggle: boolean } | null }
 
   if (!config) {
     return NextResponse.json({ error: 'このURLは存在しないか、無効です' }, { status: 404 })
@@ -113,7 +118,7 @@ export async function GET(
     return NextResponse.json({ error: '復元コードが見つかりません。確認してください' }, { status: 404 })
   }
 
-// 完了済みの場合はアドバイス込みで返す（フロント側でアドバイス画面へ）
+  // 完了済みの場合はアドバイス込みで返す（フロント側でアドバイス画面へ）
   if (session.status === 'completed') {
     return NextResponse.json({
       session: {
@@ -124,6 +129,10 @@ export async function GET(
         student_name: session.student_name,
         summary: session.summary,
         advice: session.advice,
+        hide_messages_from_teacher: session.hide_messages_from_teacher,
+      },
+      config: {
+        allow_student_privacy_toggle: config.allow_student_privacy_toggle,
       },
       messages: [],
     })
@@ -151,6 +160,10 @@ export async function GET(
       message_count: session.message_count,
       status: 'active',
       student_name: session.student_name,
+      hide_messages_from_teacher: session.hide_messages_from_teacher,
+    },
+    config: {
+      allow_student_privacy_toggle: config.allow_student_privacy_toggle,
     },
     messages: messages || [],
   })
