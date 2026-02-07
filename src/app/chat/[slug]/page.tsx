@@ -20,6 +20,7 @@ interface SessionInfo {
   student_name: string
   summary: string | null
   advice: string | null
+  next_hint: string | null
   hide_messages_from_teacher: boolean
 }
 
@@ -50,7 +51,7 @@ export default function ChatPage() {
   const [recoveryInput, setRecoveryInput] = useState('')
 
   // アドバイス結果
-  const [adviceResult, setAdviceResult] = useState<{ summary: string; advice: string } | null>(null)
+  const [adviceResult, setAdviceResult] = useState<{ summary: string; advice: string; next_hint: string | null } | null>(null)
 
   // セッション・メッセージ
   const [session, setSession]   = useState<SessionInfo | null>(null)
@@ -107,9 +108,6 @@ export default function ChatPage() {
     ? session.message_count >= ADVICE_UNLOCK_ROUNDS && session.status === 'active'
     : false
 
-  // 会話完了・アドバイス済みかどうか（復元時に「見る」バナーを出す判定）
-  const isCompleted = session?.status === 'completed' && session?.advice
-
   // ---- ハンドラ ----
 
   // 新規開始 → 入力画面へ
@@ -141,14 +139,8 @@ export default function ChatPage() {
     setMessages(data.messages || [])
 
     // 完了済みで advice がある場合はアドバイス画面へ直接
-    if (data.session.status === 'completed' && data.session.advice) {
-      setAdviceResult({ summary: data.session.summary || '', advice: data.session.advice })
-      setPageState('advice-shown')
-    } else {
-      setPageState('chat')
-    }
-  }
-
+    setPageState('chat')
+  
   // フォーム送信 → セッション作成
   const handleInfoSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -300,9 +292,9 @@ export default function ChatPage() {
       return
     }
 
-    setAdviceResult({ summary: data.summary, advice: data.advice })
+    setAdviceResult({ summary: data.summary, advice: data.advice, next_hint: data.next_hint })
     // セッション情報も更新（アドバイス済みにする）
-    setSession((prev) => prev ? { ...prev, status: 'completed', advice: data.advice, summary: data.summary } : prev)
+    setSession((prev) => prev ? { ...prev, advice: data.advice, summary: data.summary, next_hint: data.next_hint } : prev)
     setPageState('advice-shown')
   }
 
@@ -514,7 +506,7 @@ export default function ChatPage() {
   }
 
   // ============================================================
-  // ④ アドバイス表示画面
+  // ④ 整理結果表示画面
   // ============================================================
   if (pageState === 'advice-shown' && adviceResult) {
     return (
@@ -522,29 +514,57 @@ export default function ChatPage() {
         <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-5">
-              <div className="inline-flex items-center justify-center w-14 h-14 bg-green-100 rounded-full mb-3">
-                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-100 rounded-full mb-3">
+                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h2 className="text-lg font-bold text-gray-800">アドバイス</h2>
-              <p className="text-gray-500 text-sm mt-0.5">以下があなたへのアドバイスです</p>
+              <h2 className="text-lg font-bold text-gray-800">会話の整理</h2>
+              <p className="text-gray-500 text-sm mt-0.5">ここまでの内容をまとめました</p>
             </div>
 
-            {/* アドバイス（マークダウン） */}
+            {/* これまでの会話の要約 */}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-blue-700 text-xs font-semibold">これまでに話したこと</span>
+              </div>
+              <div className="text-blue-800 text-sm leading-relaxed prose prose-sm prose-blue">
+                <ReactMarkdown>{adviceResult.summary}</ReactMarkdown>
+              </div>
+            </div>
+
+            {/* 考えてみると良いこと */}
             <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-4">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
-                <span className="text-green-700 text-xs font-semibold">アドバイス</span>
+                <span className="text-green-700 text-xs font-semibold">考えてみると良いこと</span>
               </div>
               <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green">
                 <ReactMarkdown>{adviceResult.advice}</ReactMarkdown>
               </div>
             </div>
 
-            {/* ① コピーボタン */}
+            {/* 次回のヒント（上限到達時のみ） */}
+            {adviceResult.next_hint && (
+              <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 mb-4">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <svg className="w-3.5 h-3.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-yellow-700 text-xs font-semibold">次回話すと良いこと</span>
+                </div>
+                <div className="text-yellow-800 text-sm leading-relaxed prose prose-sm prose-yellow">
+                  <ReactMarkdown>{adviceResult.next_hint}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+
+            {/* コピーボタン */}
             <button
               onClick={handleCopyAdvice}
               className="w-full py-2.5 mb-3 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-1.5"
@@ -556,58 +576,21 @@ export default function ChatPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-3M8 6a2 2 0 012-2h2a2 2 0 012 2v0a2 2 0 01-2 2h-2a2 2 0 01-2-2v0z" />
                 )}
               </svg>
-              {copied ? 'コピー済み！' : 'アドバイスをコピーする'}
+              {copied ? 'コピー済み！' : '整理内容をコピーする'}
             </button>
 
-            {/* 閉じるボタン → 警告モーダルを出す */}
+            {/* 閉じる/戻るボタン */}
             <button
-              onClick={() => setShowCloseWarning(true)}
+              onClick={() => {
+                setPageState('chat')
+                setAdviceResult(null)
+              }}
               className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-xl transition-colors"
             >
-              閉じる
+              チャットに戻る
             </button>
           </div>
         </div>
-
-        {/* 閉じる確認モーダル */}
-        {showCloseWarning && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4">
-            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-              <div className="text-center mb-4">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mb-3">
-                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-bold text-gray-800 mb-1">このまま閉じますか？</h3>
-                <p className="text-gray-500 text-sm mb-3">閉じてしまうと見えなくなります。以下の復元コードを使えば再度見ることはできますが、先にコピーしておくことをおすすめします。</p>
-                <div className="bg-gray-50 rounded-xl border border-gray-200 px-4 py-3">
-                  <p className="text-xs text-gray-400 mb-0.5">復元コード</p>
-                  <p className="text-lg font-bold font-mono text-gray-800 tracking-widest">{session?.recovery_code}</p>
-                </div>
-              </div>
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={() => {
-                    setShowCloseWarning(false)
-                    setPageState('entry')
-                    setRecoveryInput('')
-                    setError('')
-                  }}
-                  className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium rounded-xl transition-colors"
-                >
-                  閉じる
-                </button>
-                <button
-                  onClick={() => setShowCloseWarning(false)}
-                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors"
-                >
-                  戻る
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     )
   }
@@ -641,7 +624,7 @@ export default function ChatPage() {
           </div>
 
           {/* プライバシートグル（許可されている場合のみ） */}
-          {config?.allow_student_privacy_toggle && !isCompleted && (
+          {config?.allow_student_privacy_toggle && (
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
               <span className="text-xs text-gray-500">先生に会話を見せない</span>
               <button
@@ -665,27 +648,6 @@ export default function ChatPage() {
       {/* チャットエリア */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-4 flex flex-col gap-3">
-
-          {/* ② 復元時・アドバイス済みの場合バナー */}
-          {isCompleted && (
-            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-              <div className="flex items-center gap-1.5 mb-2">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-green-700 text-sm font-semibold">この会話は完了しています</span>
-              </div>
-              <button
-                onClick={() => {
-                  setAdviceResult({ summary: session!.summary || '', advice: session!.advice! })
-                  setPageState('advice-shown')
-                }}
-                className="w-full py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                アドバイスを見る
-              </button>
-            </div>
-          )}
 
           {messages.length === 0 && !isCompleted && (
             <div className="text-center py-6">
@@ -736,8 +698,7 @@ export default function ChatPage() {
         <div className="max-w-2xl mx-auto">
 
           {/* アドバイス・保存退出ボタン（完了済みの場合は非表示） */}
-          {!isCompleted && (
-            <div className={`flex gap-2 mb-3 ${showAdviceBtn ? '' : 'justify-end'}`}>
+          <div className={`flex gap-2 mb-3 ${showAdviceBtn ? '' : 'justify-end'}`}>
               {showAdviceBtn && (
                 <button
                   onClick={handleGetAdvice}
@@ -747,7 +708,7 @@ export default function ChatPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
-                  {isSending ? '生成中...' : 'アドバイスを頂く'}
+                  {isSending ? '整理中...' : 'ここまでの会話を整理する'}
                 </button>
               )}
               <button
@@ -758,9 +719,8 @@ export default function ChatPage() {
                 {isSending ? '処理中...' : '保存して退出する'}
               </button>
             </div>
-          )}
 
-          {/* チャット入力フォーム（完了済みの場合は無効） */}
+          {/* チャット入力フォーム */}
           <form onSubmit={handleChatSend} className="flex gap-2 items-end">
             <textarea
               value={chatInput}
@@ -773,14 +733,14 @@ export default function ChatPage() {
                   handleChatSend(e)
                 }
               }}
-              placeholder={isCompleted ? 'この会話は完了しています' : 'メッセージを入力してください'}
+              placeholder="メッセージを入力してください"
               rows={2}
-              disabled={isSending || remaining <= 0 || !!isCompleted}
+              disabled={isSending || remaining <= 0}
               className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none text-gray-800 placeholder-gray-400 text-base disabled:bg-gray-50 disabled:text-gray-400 resize-none"
             />
             <button
               type="submit"
-              disabled={isSending || !chatInput.trim() || remaining <= 0 || !!isCompleted}
+              disabled={isSending || !chatInput.trim() || remaining <= 0}
               className="px-5 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white rounded-xl transition-colors shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -789,9 +749,9 @@ export default function ChatPage() {
             </button>
           </form>
 
-          {remaining <= 0 && !isCompleted && (
+          {remaining <= 0 && (
             <p className="text-center text-red-500 text-xs mt-2">
-              会話の上限に達しました。アドバイスを頂くか、保存して退出してください。
+              会話の上限に達しました。「ここまでの会話を整理する」で振り返ってみましょう。
             </p>
           )}
         </div>
