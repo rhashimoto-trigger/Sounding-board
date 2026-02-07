@@ -91,7 +91,10 @@ export default function CreateConfigPage() {
   }
 
   // URL生成成功後の画面
+  // URL生成成功後の画面
   if (generatedUrl) {
+    const displayTheme = getThemeValue()
+    
     return (
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -112,6 +115,7 @@ export default function CreateConfigPage() {
             <h2 className="text-xl font-bold text-gray-800 mb-2">URL生成完了！</h2>
             <p className="text-gray-500 text-sm mb-6">以下のURLを生徒に共有してください</p>
 
+            {/* 生成URL */}
             <div className="bg-gray-50 rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-3 mb-6">
               <span className="text-primary-600 font-mono text-sm truncate flex-1 text-left">
                 {generatedUrl}
@@ -124,6 +128,60 @@ export default function CreateConfigPage() {
               </button>
             </div>
 
+            {/* 設定詳細（折りたたみ可能） */}
+            <details className="text-left bg-gray-50 rounded-xl border border-gray-200 mb-6">
+              <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-gray-700 hover:bg-gray-100 rounded-xl transition-colors">
+                設定内容を確認
+              </summary>
+              <div className="px-4 pb-4 pt-2 space-y-4">
+                {/* テーマ */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">テーマ</p>
+                  <p className="text-sm text-gray-800">{displayTheme}</p>
+                </div>
+
+                {/* アプローチ */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">アプローチ</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{approach}</p>
+                </div>
+
+                {/* 重視すべき点 */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">重視すべき点</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{importantPoints}</p>
+                </div>
+
+                {/* ソース（ある場合のみ） */}
+                {sourceText && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">ソース</p>
+                    <details className="bg-white rounded-lg border border-gray-200">
+                      <summary className="px-3 py-2 cursor-pointer text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                        参照資料を表示（{sourceText.length}文字）
+                      </summary>
+                      <div className="px-3 pb-3 pt-1">
+                        <p className="text-xs text-gray-700 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                          {sourceText}
+                        </p>
+                      </div>
+                    </details>
+                  </div>
+                )}
+
+                {/* プライバシー設定 */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">プライバシー設定</p>
+                  <p className="text-sm text-gray-800">
+                    {allowStudentPrivacyToggle 
+                      ? '✓ 生徒が会話の表示/非表示を選択できます' 
+                      : '× 先生は常に会話を閲覧できます'}
+                  </p>
+                </div>
+              </div>
+            </details>
+
+            {/* アクション */}
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => router.push('/admin')}
