@@ -140,11 +140,11 @@ export default function ConfigSessionsPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-gray-400 text-xs font-mono">{window.location.origin}/chat/{config.slug}</span>
+                <span className="text-gray-400 text-xs font-mono">{origin}/chat/{config.slug}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    navigator.clipboard.writeText(`${window.location.origin}/chat/${config.slug}`)
+                    navigator.clipboard.writeText(`${origin}/chat/${config.slug}`)
                   }}
                   className="shrink-0 px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs rounded-lg transition-colors"
                 >
