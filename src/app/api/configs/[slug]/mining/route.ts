@@ -1,10 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 import { supabase } from '@/lib/supabase'
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.AI_API_KEY!,
+const openai = new OpenAI({
+  apiKey: process.env.GPT_API_KEY!,
 })
 
 /**
@@ -58,10 +58,9 @@ async function generateSummary(sessionId: string, theme: string): Promise<string
     .map((m) => `${m.role === 'user' ? '生徒' : 'AI'}: ${m.content}`)
     .join('\n\n')
 
-  // Claude APIで要約生成
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 500,
+  // OpenAI APIで要約生成
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     messages: [
       {
         role: 'user',
@@ -70,9 +69,11 @@ async function generateSummary(sessionId: string, theme: string): Promise<string
 ${conversation}`,
       },
     ],
+    temperature: 0.7,
+    max_tokens: 500,
   })
 
-  return message.content[0].type === 'text' ? message.content[0].text : '（要約失敗）'
+  return completion.choices[0].message.content || '（要約失敗）'
 }
 
 /**
@@ -138,10 +139,9 @@ export async function POST(
     .map((s, i) => `【生徒${i + 1}】${s.grade}年${s.class_name}組${s.seat_number}番 ${s.student_name}\n${s.summary || '（要約なし）'}`)
     .join('\n\n---\n\n')
 
-  // Claude APIでマイニング
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2000,
+  // OpenAI APIでマイニング
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     messages: [
       {
         role: 'user',
@@ -165,9 +165,11 @@ ${summariesText}
 ※ JSONのみを出力し、他の説明は不要です`,
       },
     ],
+    temperature: 0.7,
+    max_tokens: 2000,
   })
 
-  const resultText = message.content[0].type === 'text' ? message.content[0].text : '{}'
+  const resultText = completion.choices[0].message.content || '{}'
   const miningResult = JSON.parse(resultText)
 
   // DBに保存
