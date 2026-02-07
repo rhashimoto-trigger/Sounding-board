@@ -29,7 +29,7 @@ export async function GET(
   // この生徒のセッションが自分の先生のURLかどうか確認
   const { data: config } = await supabase
     .from('chat_configs')
-    .select('id, slug, theme')
+    .select('id, slug, title, theme')
     .eq('id', session.config_id)
     .eq('teacher_id', token.id as string)
     .single() as { data: any }
