@@ -1,89 +1,173 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
 import { supabase } from '@/lib/supabase'
-import { generateSlug } from '@/lib/utils'
+import { generateRecoveryCode } from '@/lib/utils'
 
 /**
- * POST /api/configs
- * URL設定を新規作成する
+ * POST /api/chat/[slug]
+ * 新規セッション作成
+ * Body: { grade, class_name, seat_number, student_name }
  */
-export async function POST(req: NextRequest) {
-  // 認証チェック
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET! })
-  if (!token?.id) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  // slugからconfigを取得
+  const { data: config } = await supabase
+    .from('chat_configs')
+    .select('id, title, allow_student_privacy_toggle')
+    .eq('slug', params.slug)
+    .single() as { data: { id: string; title: string; allow_student_privacy_toggle: boolean } | null }
+
+  if (!config) {
+    return NextResponse.json({ error: 'このURLは存在しないか、無効です' }, { status: 404 })
   }
 
-  // リクエストボディの取得
-  const { theme, approach, important_points, source_text, allow_student_privacy_toggle } = await req.json()
+  const { grade, class_name, seat_number, student_name } = await req.json()
 
   // バリデーション
-  if (!theme || !approach || !important_points) {
-    return NextResponse.json({ error: 'テーマ・アプローチ・重視すべき点は必須です' }, { status: 400 })
+  if (!grade || !class_name || !seat_number || !student_name) {
+    return NextResponse.json({ error: '全項目を入力してください' }, { status: 400 })
   }
 
-  // slug の重複チェックつきで生成
-  let slug = generateSlug()
-  let attempts = 0
-  while (attempts < 10) {
+  // 復元コード生成（重複チェック付き）
+  let recoveryCode = generateRecoveryCode()
+  for (let i = 0; i < 10; i++) {
     const { data: existing } = await supabase
-      .from('chat_configs')
+      .from('chat_sessions')
       .select('id')
-      .eq('slug', slug)
+      .eq('recovery_code', recoveryCode)
       .single() as { data: { id: string } | null }
-
-    if (!existing) break // 重複なし
-    slug = generateSlug()
-    attempts++
+    if (!existing) break
+    recoveryCode = generateRecoveryCode()
   }
 
-  if (attempts >= 10) {
-    return NextResponse.json({ error: 'URL生成に失敗しました。もう一度お試しください' }, { status: 500 })
-  }
-
-  // Supabaseに保存
+  // セッション作成
   const insertQuery = supabase
-    .from('chat_configs')
+    .from('chat_sessions')
     .insert({
-      teacher_id: token.id as string,
-      slug,
-      theme,
-      approach,
-      important_points,
-      source_text: source_text || null,
-      allow_student_privacy_toggle: allow_student_privacy_toggle || false,
+      config_id: config.id,
+      grade,
+      class_name,
+      seat_number,
+      student_name,
+      recovery_code: recoveryCode,
+      message_count: 0,
+      status: 'active',
+      summary: null,
+      advice: null,
+      hide_messages_from_teacher: false,
     })
     .select()
 
   const { data, error } = (await insertQuery) as { data: any[]; error: any }
 
   if (error) {
-    return NextResponse.json({ error: 'データの保存に失敗しました' }, { status: 500 })
+    return NextResponse.json({ error: 'セッション作成に失敗しました' }, { status: 500 })
   }
 
-  return NextResponse.json({ config: data[0] }, { status: 201 })
+  return NextResponse.json({
+    session: {
+      id: data[0].id,
+      recovery_code: data[0].recovery_code,
+      message_count: data[0].message_count,
+      status: data[0].status,
+      student_name: data[0].student_name,
+      hide_messages_from_teacher: data[0].hide_messages_from_teacher,
+    },
+    config: {
+      title: config.title,
+      allow_student_privacy_toggle: config.allow_student_privacy_toggle,
+    },
+    messages: [],
+  })
 }
 
 /**
- * GET /api/configs
- * ログイン先生のURL一覧を取得する
+ * GET /api/chat/[slug]?recovery_code=R-XXXXXXXX
+ * 復元コードからセッションを復元する
  */
-export async function GET(req: NextRequest) {
-  // 認証チェック
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET! })
-  if (!token?.id) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  const recoveryCode = req.nextUrl.searchParams.get('recovery_code')
+
+  if (!recoveryCode) {
+    return NextResponse.json({ error: '復元コードが必要です' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  // slugからconfigを取得
+  const { data: config } = await supabase
     .from('chat_configs')
-    .select('*')
-    .eq('teacher_id', token.id as string)
-    .order('created_at', { ascending: false }) as { data: any[]; error: any }
+    .select('id, title, allow_student_privacy_toggle')
+    .eq('slug', params.slug)
+    .single() as { data: { id: string; title: string; allow_student_privacy_toggle: boolean } | null }
 
-  if (error) {
-    return NextResponse.json({ error: 'データの取得に失敗しました' }, { status: 500 })
+  if (!config) {
+    return NextResponse.json({ error: 'このURLは存在しないか、無効です' }, { status: 404 })
   }
 
-  return NextResponse.json({ configs: data })
+  // 復元コードでセッション検索
+  const { data: session } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .eq('recovery_code', recoveryCode)
+    .eq('config_id', config.id)
+    .single() as { data: any }
+
+  if (!session) {
+    return NextResponse.json({ error: '復元コードが見つかりません。確認してください' }, { status: 404 })
+  }
+
+  // 完了済みの場合はアドバイス込みで返す（フロント側でアドバイス画面へ）
+  if (session.status === 'completed') {
+    return NextResponse.json({
+      session: {
+        id: session.id,
+        recovery_code: session.recovery_code,
+        message_count: session.message_count,
+        status: session.status,
+        student_name: session.student_name,
+        summary: session.summary,
+        advice: session.advice,
+        hide_messages_from_teacher: session.hide_messages_from_teacher,
+      },
+      config: {
+        title: config.title,
+        allow_student_privacy_toggle: config.allow_student_privacy_toggle,
+      },
+      messages: [],
+    })
+  }
+
+  // paused の場合は active に戻す
+  if (session.status === 'paused') {
+    await supabase
+      .from('chat_sessions')
+      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .eq('id', session.id)
+  }
+
+  // メッセージ一覧を取得
+  const { data: messages } = await supabase
+    .from('chat_messages')
+    .select('id, role, content, created_at')
+    .eq('session_id', session.id)
+    .order('created_at', { ascending: true }) as { data: any[] }
+
+  return NextResponse.json({
+    session: {
+      id: session.id,
+      recovery_code: session.recovery_code,
+      message_count: session.message_count,
+      status: 'active',
+      student_name: session.student_name,
+      hide_messages_from_teacher: session.hide_messages_from_teacher,
+    },
+    config: {
+      title: config.title,
+      allow_student_privacy_toggle: config.allow_student_privacy_toggle,
+    },
+    messages: messages || [],
+  })
 }
