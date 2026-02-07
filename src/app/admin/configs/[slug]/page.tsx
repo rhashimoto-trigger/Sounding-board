@@ -51,6 +51,7 @@ export default function ConfigSessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [origin, setOrigin] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -71,6 +72,11 @@ export default function ConfigSessionsPage() {
         setIsLoading(false)
       })
   }, [slug])
+
+  // 新しい useEffect を追加
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
   // 日付フォーマット
   const formatDate = (dateStr: string) => {
@@ -133,7 +139,18 @@ export default function ConfigSessionsPage() {
                   {config.theme}
                 </span>
               </div>
-              <span className="text-gray-400 text-xs font-mono">/chat/{config.slug}</span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-gray-400 text-xs font-mono">{window.location.origin}/chat/{config.slug}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigator.clipboard.writeText(`${window.location.origin}/chat/${config.slug}`)
+                  }}
+                  className="shrink-0 px-2 py-0.5 bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs rounded-lg transition-colors"
+                >
+                  コピー
+                </button>
+              </div>
             </div>
             <span className="text-gray-400 text-xs shrink-0">{formatDate(config.created_at)}</span>
           </div>
