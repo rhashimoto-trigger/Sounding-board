@@ -140,6 +140,7 @@ export default function ChatPage() {
 
     // 完了済みで advice がある場合はアドバイス画面へ直接
     setPageState('chat')
+  }
   
   // フォーム送信 → セッション作成
   const handleInfoSubmit = async (e: FormEvent) => {
