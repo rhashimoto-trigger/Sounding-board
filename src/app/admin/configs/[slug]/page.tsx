@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 interface Config {
   id: string
   slug: string
+  title: string
   theme: string
   approach: string
   important_points: string
@@ -115,20 +116,23 @@ export default function ConfigSessionsPage() {
 
       {/* コンテンツ */}
       <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* パンクラム */}
+        {/* パンくらず */}
         <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
           <button onClick={() => router.push('/admin')} className="hover:text-primary-600 transition-colors">一覧</button>
           <span>›</span>
-          <span className="text-gray-600 font-medium">{config.theme}</span>
+          <span className="text-gray-600 font-medium">{config.title}</span>
         </div>
 
         {/* URL設定情報カード */}
         <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6">
           <div className="flex items-start justify-between gap-3 mb-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">
-                {config.theme}
-              </span>
+            <div className="flex-1">
+              <div className="flex flex-col gap-1 mb-2">
+                <span className="text-base font-bold text-gray-800">{config.title}</span>
+                <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full self-start">
+                  {config.theme}
+                </span>
+              </div>
               <span className="text-gray-400 text-xs font-mono">/chat/{config.slug}</span>
             </div>
             <span className="text-gray-400 text-xs shrink-0">{formatDate(config.created_at)}</span>
