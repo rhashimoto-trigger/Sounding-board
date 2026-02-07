@@ -24,6 +24,7 @@ interface SessionInfo {
 }
 
 interface ConfigInfo {
+  title: string
   allow_student_privacy_toggle: boolean
 }
 
@@ -78,6 +79,20 @@ export default function ChatPage() {
 
   // スクロール参照
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // エントリ画面で config を取得（タイトル表示用）
+  useEffect(() => {
+    if (pageState === 'entry') {
+      fetch(`/api/chat/${slug}/config`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (!data.error) {
+            setConfig(data.config)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [pageState, slug])
 
   // メッセージ更新時に下にスクロール
   useEffect(() => {
@@ -351,6 +366,9 @@ export default function ChatPage() {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-gray-800">壁打ちくん</h1>
+            {config?.title && (
+              <p className="text-primary-600 text-sm font-semibold mt-1">{config.title}</p>
+            )}
             <p className="text-gray-500 text-sm mt-1">先生のチャットに参加してください</p>
           </div>
 
@@ -605,6 +623,9 @@ export default function ChatPage() {
           <div className="flex items-center justify-between mb-2">
             <div>
               <h1 className="text-sm font-bold text-gray-800">壁打ちくん</h1>
+              {config?.title && (
+                <p className="text-xs text-primary-600 font-semibold">{config.title}</p>
+              )}
               <p className="text-xs text-gray-400">{session?.student_name} さん</p>
             </div>
             <div className="flex items-center gap-2">
