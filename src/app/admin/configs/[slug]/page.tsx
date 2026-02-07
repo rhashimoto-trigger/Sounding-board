@@ -62,6 +62,7 @@ export default function ConfigSessionsPage() {
   const [isMining, setIsMining] = useState(false)
   const [showMining, setShowMining] = useState(false)
   const [origin, setOrigin] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     Promise.all([
