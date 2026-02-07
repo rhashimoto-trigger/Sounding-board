@@ -30,6 +30,13 @@ interface Session {
   updated_at: string
 }
 
+interface MiningResult {
+  keywords: string[]
+  topics: { topic: string; count: number; description: string }[]
+  trends: string
+  concerns: string
+}
+
 // ステータスバッジのスタイル
 const STATUS_STYLES: Record<string, string> = {
   active:    'bg-blue-50 text-blue-700',
@@ -50,7 +57,10 @@ export default function ConfigSessionsPage() {
   const [config, setConfig] = useState<Config | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [miningResult, setMiningResult] = useState<MiningResult | null>(null)
+  const [miningUpdatedAt, setMiningUpdatedAt] = useState<string | null>(null)
+  const [isMining, setIsMining] = useState(false)
+  const [showMining, setShowMining] = useState(false)
   const [origin, setOrigin] = useState('')
 
   useEffect(() => {
@@ -78,6 +88,31 @@ export default function ConfigSessionsPage() {
     setOrigin(window.location.origin)
   }, [])
 
+　// テキストマイニング実行
+  const handleMining = async () => {
+    setIsMining(true)
+    setError('')
+
+    try {
+      const res = await fetch(`/api/configs/${slug}/mining`, { method: 'POST' })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'マイニングに失敗しました')
+        setIsMining(false)
+        return
+      }
+
+      setMiningResult(data.result)
+      setMiningUpdatedAt(data.updated_at)
+      setShowMining(true)
+    } catch (err) {
+      setError('マイニングに失敗しました')
+    }
+
+    setIsMining(false)
+  }
+  
   // 日付フォーマット
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
@@ -88,6 +123,21 @@ export default function ConfigSessionsPage() {
       minute: '2-digit',
     })
   }
+
+  // マイニング結果の取得
+  useEffect(() => {
+    if (config) {
+      fetch(`/api/configs/${slug}/mining`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.result) {
+            setMiningResult(data.result)
+            setMiningUpdatedAt(data.updated_at)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [config, slug])
 
   // ローディング・エラー
   if (isLoading) {
@@ -204,6 +254,107 @@ export default function ConfigSessionsPage() {
               </div>
             </div>
           </details>
+        </div>
+        {/* テキストマイニングセクション */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-gray-700">テキストマイニング</h2>
+            <button
+              onClick={handleMining}
+              disabled={isMining || sessions.length === 0}
+              className="px-4 py-2 bg-accent-500 hover:bg-accent-600 disabled:bg-gray-300 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              {isMining ? '分析中...' : miningResult ? '再分析する' : '分析を実行'}
+            </button>
+          </div>
+
+          {miningResult ? (
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-gray-400">
+                  最終更新: {miningUpdatedAt ? new Date(miningUpdatedAt).toLocaleString('ja-JP') : '-'}
+                </p>
+                <button
+                  onClick={() => setShowMining(!showMining)}
+                  className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  {showMining ? '閉じる' : '詳細を表示'}
+                </button>
+              </div>
+
+              {showMining && (
+                <div className="space-y-4">
+                  {/* 頻出キーワード */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                      </svg>
+                      頻出キーワード
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {miningResult.keywords.map((kw, i) => (
+                        <span key={i} className="inline-block px-3 py-1 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 主なトピック */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      主なトピック
+                    </h3>
+                    <div className="space-y-2">
+                      {miningResult.topics.map((t, i) => (
+                        <div key={i} className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-semibold text-gray-800">{t.topic}</span>
+                            <span className="text-xs text-gray-500">{t.count}人</span>
+                          </div>
+                          <p className="text-xs text-gray-600">{t.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 全体的な傾向 */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      全体的な傾向
+                    </h3>
+                    <p className="text-sm text-gray-700 bg-blue-50 rounded-lg p-3">{miningResult.trends}</p>
+                  </div>
+
+                  {/* 気になる点 */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                      <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      気になる点
+                    </h3>
+                    <p className="text-sm text-gray-700 bg-yellow-50 rounded-lg p-3">{miningResult.concerns}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 border-dashed p-8 text-center">
+              <p className="text-gray-500 text-sm">
+                {sessions.length === 0 
+                  ? 'まだ生徒のチャットがありません' 
+                  : '「分析を実行」ボタンを押すと、全生徒の会話を分析します'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 生徒一覧タイトル */}
