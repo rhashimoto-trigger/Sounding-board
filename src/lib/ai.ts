@@ -9,11 +9,10 @@ export async function callAI({
   systemPrompt: string
   messages: { role: 'user' | 'assistant'; content: string }[]
 }): Promise<string> {
-  const apiKey = process.env.AI_API_KEY
-  const apiBaseUrl = process.env.AI_API_BASE_URL
-
-  if (!apiKey || !apiBaseUrl) {
-    throw new Error('AI_API_KEY または AI_API_BASE_URL が設定されていません')
+  const apiKey = process.env.GPT_API_KEY
+  const apiBaseUrl = 'https://api.openai.com/v1'
+  if (!apiKey) {
+    throw new Error('GPT_API_KEY が設定されていません')
   }
 
   const response = await fetch(`${apiBaseUrl}/chat/completions`, {
@@ -58,11 +57,10 @@ export async function callAIStream({
   systemPrompt: string
   messages: { role: 'user' | 'assistant'; content: string }[]
 }): Promise<Response> {
-  const apiKey = process.env.AI_API_KEY
-  const apiBaseUrl = process.env.AI_API_BASE_URL
-
-  if (!apiKey || !apiBaseUrl) {
-    throw new Error('AI_API_KEY または AI_API_BASE_URL が設定されていません')
+  const apiKey = process.env.GPT_API_KEY
+  const apiBaseUrl = 'https://api.openai.com/v1'
+  if (!apiKey) {
+    throw new Error('GPT_API_KEY が設定されていません')
   }
 
   const response = await fetch(`${apiBaseUrl}/chat/completions`, {
