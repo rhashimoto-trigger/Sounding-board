@@ -20,6 +20,11 @@ interface SessionInfo {
   student_name: string
   summary: string | null
   advice: string | null
+  hide_messages_from_teacher: boolean
+}
+
+interface ConfigInfo {
+  allow_student_privacy_toggle: boolean
 }
 
 const MAX_MESSAGES = 50
@@ -66,6 +71,10 @@ export default function ChatPage() {
 
   // エラー
   const [error, setError] = useState('')
+  
+  // プライバシー設定
+  const [config, setConfig] = useState<ConfigInfo | null>(null)
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false)
 
   // スクロール参照
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -145,6 +154,7 @@ export default function ChatPage() {
     }
 
     setSession(data.session)
+    setConfig(data.config)
     setMessages(data.messages || [])
     setPageState('chat')
   }
@@ -286,6 +296,38 @@ export default function ChatPage() {
     navigator.clipboard.writeText(adviceResult.advice)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+  
+  // プライバシー設定の切り替え
+  const handlePrivacyToggle = async () => {
+    if (!session || !config?.allow_student_privacy_toggle) return
+    
+    const newValue = !session.hide_messages_from_teacher
+    setIsUpdatingPrivacy(true)
+
+    try {
+      const res = await fetch(`/api/chat/${slug}/privacy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: session.id,
+          hide_messages: newValue,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'プライバシー設定の更新に失敗しました')
+        setIsUpdatingPrivacy(false)
+        return
+      }
+
+      setSession((prev) => prev ? { ...prev, hide_messages_from_teacher: newValue } : prev)
+    } catch (err) {
+      setError('プライバシー設定の更新に失敗しました')
+    }
+
+    setIsUpdatingPrivacy(false)
   }
 
   // 時刻フォーマット
