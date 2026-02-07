@@ -1,9 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.AI_API_KEY!,
+const openai = new OpenAI({
+  apiKey: process.env.GPT_API_KEY!,
 })
 
 /**
@@ -71,14 +71,15 @@ ${conversation}
 
 ※ JSONのみを出力し、他の説明は不要です`
 
-  // Claude APIで整理
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 1000,
+  // OpenAI APIで整理
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    max_tokens: 1000,
   })
 
-  const resultText = message.content[0].type === 'text' ? message.content[0].text : '{}'
+  const resultText = completion.choices[0].message.content || '{}'
   const result = JSON.parse(resultText)
 
   // DBに保存（statusは変更しない）
