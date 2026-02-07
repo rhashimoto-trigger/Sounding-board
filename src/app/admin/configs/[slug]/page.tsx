@@ -10,6 +10,7 @@ interface Config {
   approach: string
   important_points: string
   source_text: string | null
+  allow_student_privacy_toggle: boolean
   created_at: string
 }
 
@@ -132,9 +133,53 @@ export default function ConfigSessionsPage() {
             </div>
             <span className="text-gray-400 text-xs shrink-0">{formatDate(config.created_at)}</span>
           </div>
-          <div className="flex gap-4 text-xs text-gray-500">
-            <span><span className="text-gray-400">アプローチ:</span> {config.approach.slice(0, 40)}{config.approach.length > 40 ? '...' : ''}</span>
-          </div>
+
+          {/* 設定詳細（折りたたみ可能） */}
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-primary-600 hover:text-primary-700 font-medium">
+              設定内容を表示
+            </summary>
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+              {/* アプローチ */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">アプローチ</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{config.approach}</p>
+              </div>
+
+              {/* 重視すべき点 */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">重視すべき点</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{config.important_points}</p>
+              </div>
+
+              {/* ソース（ある場合のみ） */}
+              {config.source_text && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">ソース</p>
+                  <details className="bg-gray-50 rounded-lg border border-gray-200">
+                    <summary className="px-3 py-2 cursor-pointer text-xs text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      参照資料を表示（{config.source_text.length}文字）
+                    </summary>
+                    <div className="px-3 pb-3 pt-1">
+                      <p className="text-xs text-gray-700 whitespace-pre-wrap max-h-60 overflow-y-auto">
+                        {config.source_text}
+                      </p>
+                    </div>
+                  </details>
+                </div>
+              )}
+
+              {/* プライバシー設定 */}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1">プライバシー設定</p>
+                <p className="text-sm text-gray-700">
+                  {config.allow_student_privacy_toggle 
+                    ? '✓ 生徒が会話の表示/非表示を選択できます' 
+                    : '× 先生は常に会話を閲覧できます'}
+                </p>
+              </div>
+            </div>
+          </details>
         </div>
 
         {/* 生徒一覧タイトル */}
