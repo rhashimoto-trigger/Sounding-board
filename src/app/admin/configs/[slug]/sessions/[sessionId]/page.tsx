@@ -16,6 +16,7 @@ interface SessionDetail {
     summary: string | null
     advice: string | null
     recovery_code: string
+    hide_messages_from_teacher: boolean
     created_at: string
     updated_at: string
   }
@@ -186,36 +187,53 @@ export default function SessionDetailPage() {
           <h3 className="text-sm font-bold text-gray-600 mb-3">チャットログ</h3>
         </div>
 
-        {messages.length === 0 && (
-          <div className="text-center py-6 text-gray-400 text-sm">メッセージがありません</div>
-        )}
-
-        {messages.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                {/* アバター */}
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
-                  ${msg.role === 'user' ? 'bg-primary-100 text-primary-600' : 'bg-gray-200 text-gray-600'}`}
-                >
-                  {msg.role === 'user' ? session.student_name.charAt(0) : 'AI'}
-                </div>
-
-                {/* バブル */}
-                <div className={`max-w-[75%] rounded-2xl px-4 py-3
-                  ${msg.role === 'user'
-                    ? 'bg-primary-600 text-white rounded-tr-sm'
-                    : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
-                  }`}
-                >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                  <p className={`text-xs mt-1 text-right ${msg.role === 'user' ? 'text-primary-200' : 'text-gray-400'}`}>
-                    {formatTime(msg.created_at)}
-                  </p>
-                </div>
-              </div>
-            ))}
+        {/* プライバシー保護中の場合 */}
+        {session.hide_messages_from_teacher ? (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-8 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mb-3">
+              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h4 className="text-base font-bold text-gray-800 mb-1">プライバシー保護中</h4>
+            <p className="text-gray-500 text-sm">
+              生徒がプライバシー設定により、会話内容を非公開にしています。
+            </p>
           </div>
+        ) : (
+          <>
+            {messages.length === 0 && (
+              <div className="text-center py-6 text-gray-400 text-sm">メッセージがありません</div>
+            )}
+
+            {messages.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    {/* アバター */}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold
+                      ${msg.role === 'user' ? 'bg-primary-100 text-primary-600' : 'bg-gray-200 text-gray-600'}`}
+                    >
+                      {msg.role === 'user' ? session.student_name.charAt(0) : 'AI'}
+                    </div>
+
+                    {/* バブル */}
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-3
+                      ${msg.role === 'user'
+                        ? 'bg-primary-600 text-white rounded-tr-sm'
+                        : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm'
+                      }`}
+                    >
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                      <p className={`text-xs mt-1 text-right ${msg.role === 'user' ? 'text-primary-200' : 'text-gray-400'}`}>
+                        {formatTime(msg.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
