@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: process.env.AI_API_KEY!,
 })
 
 /**
