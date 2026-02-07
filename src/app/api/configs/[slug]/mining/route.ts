@@ -60,7 +60,7 @@ async function generateSummary(sessionId: string, theme: string): Promise<string
 
   // OpenAI APIで要約生成
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     messages: [
       {
         role: 'user',
@@ -141,7 +141,7 @@ export async function POST(
 
   // OpenAI APIでマイニング
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'gpt-5-mini',
     messages: [
       {
         role: 'user',
