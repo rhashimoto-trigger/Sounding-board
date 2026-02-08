@@ -550,7 +550,7 @@ export default function ChatPage() {
               </div>
             </div>
 
-            {/* 次回のヒント（上限到達時のみ） */}
+            {/* 考えてみると良いこと（常に表示） */}
             {adviceResult.next_hint && (
               <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-4 mb-4">
                 <div className="flex items-center gap-1.5 mb-1.5">
