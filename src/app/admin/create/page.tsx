@@ -154,13 +154,13 @@ export default function CreateConfigPage() {
 
                 {/* アプローチ */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">アプローチ</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">アプローチ方法や会話の中で重視すべき点</p>
                   <p className="text-sm text-gray-800 whitespace-pre-wrap">{approach}</p>
                 </div>
 
                 {/* 重視すべき点 */}
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 mb-1">重視すべき点</p>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">会話を進める中で生徒に到達して欲しいゴール像</p>
                   <p className="text-sm text-gray-800 whitespace-pre-wrap">{importantPoints}</p>
                 </div>
 
