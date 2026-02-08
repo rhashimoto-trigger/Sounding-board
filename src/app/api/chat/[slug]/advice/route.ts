@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 /**
  * POST /api/chat/[slug]/advice
- * 会話を整理（要約・アドバイス・次回のヒント生成）
+ * 会話を整理（要約・アドバイス・次のステップ生成）
  */
 export async function POST(
   req: NextRequest,
@@ -23,7 +23,7 @@ export async function POST(
   // セッション取得
   const { data: session } = await supabase
     .from('chat_sessions')
-    .select('*, chat_configs(theme)')
+    .select('*, chat_configs(theme, approach, important_points)')
     .eq('id', session_id)
     .single() as { data: any }
 
@@ -47,26 +47,27 @@ export async function POST(
     .map((m) => `${m.role === 'user' ? '生徒' : 'AI'}: ${m.content}`)
     .join('\n\n')
 
-  const theme = session.chat_configs?.theme || 'テーマ不明'
-  const isNearLimit = session.message_count >= 45 // 上限近い
+  const config = session.chat_configs
+  const theme = config?.theme || 'テーマ不明'
+  const approach = config?.approach || ''
+  const goal = config?.important_points || ''
 
   // プロンプト作成
-  let prompt = `以下は「${theme}」についての生徒とAIの会話です。
+  const prompt = `以下は「${theme}」についての生徒とAIの会話です。
 
+【会話内容】
 ${conversation}
 
-この会話を整理して、以下の形式のJSONで出力してください：
+【先生の設定】
+- アプローチ方法や会話の中で重視すべき点: ${approach}
+- 会話を進める中で生徒に到達して欲しいゴール像: ${goal}
+
+この会話を分析して、以下の3つの内容をJSON形式で出力してください：
 
 {
-  "summary": "これまでの会話の要約（3-5文で、生徒が話した内容を中心に）",
-  "advice": "考えてみると良いこと、AIからのアドバイス（3-5文で、具体的な提案や視点を）"`
-
-  if (isNearLimit) {
-    prompt += `,
-  "next_hint": "次回のチャットで話すと良いこと（2-3文で、今回の続きとして何を掘り下げると良いか、どんな切り口で始めると良いかを提案）"`
-  }
-
-  prompt += `
+  "summary": "【先生向け要約】会話の進捗を3-5文で要約。生徒が何を話し、どんなことを考えていて、どんな状態にあるかを先生が把握できるようまとめる。良い報告でなくてもOK。",
+  "advice": "【生徒向け「これまでに話したこと」】会話の内容を整理・分析し、生徒自身が気づいていないかもしれない感情や考えも言語化して、生徒の気づきを促す（3-5文）",
+  "next_hint": "【生徒向け「考えてみると良いこと」】ゴール像に近づくために、「advice」も踏まえて生徒が次に考えたり行動したりすると良いことを具体的に提案する。ただし、ゴール像そのものは明示しない（2-3文）"
 }
 
 ※ JSONのみを出力し、他の説明は不要です`
@@ -75,7 +76,7 @@ ${conversation}
   const completion = await openai.chat.completions.create({
     model: 'gpt-5-mini',
     messages: [{ role: 'user', content: prompt }],
-    max_completion_tokens: 5000,
+    max_completion_tokens: 2000,
   })
 
   const resultText = completion.choices[0].message.content || '{}'
@@ -98,6 +99,6 @@ ${conversation}
   return NextResponse.json({
     summary: result.summary,
     advice: result.advice,
-    next_hint: result.next_hint || null,
+    next_hint: result.next_hint,
   })
 }
