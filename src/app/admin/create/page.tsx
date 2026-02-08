@@ -295,9 +295,9 @@ export default function CreateConfigPage() {
             {/* アプローチ */}
             <div className="mb-5">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                アプローチ <span className="text-red-500">*</span>
+                アプローチ方法や会話の中で重視すべき点 <span className="text-red-500">*</span>
               </label>
-              <p className="text-xs text-gray-400 mb-2">どのような視点や考え方で相談を進めるか</p>
+              <p className="text-xs text-gray-400 mb-2">どのような視点や考え方で相談を進めるか、会話の中で何を大切にすべきか</p>
               <textarea
                 value={approach}
                 onChange={(e) => setApproach(e.target.value)}
@@ -310,13 +310,13 @@ export default function CreateConfigPage() {
             {/* 重視すべき点 */}
             <div className="mb-5">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                重視すべき点 <span className="text-red-500">*</span>
+                会話を進める中で生徒に到達して欲しいゴール像 <span className="text-red-500">*</span>
               </label>
-              <p className="text-xs text-gray-400 mb-2">何を大切にすべきかを先生の視点で伝える</p>
+              <p className="text-xs text-gray-400 mb-2">生徒がどのような状態になることを目指すか（生徒には明示されません）</p>
               <textarea
                 value={importantPoints}
                 onChange={(e) => setImportantPoints(e.target.value)}
-                placeholder="例：無理に答えを出さず、生徒が自分で考える時間を確保することが大切"
+                placeholder="例：自分の強みや興味を明確に理解し、具体的な進路の選択肢を持って前向きに行動できる状態"
                 rows={3}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 outline-none transition-all text-gray-800 placeholder-gray-400 text-sm resize-none"
               />
