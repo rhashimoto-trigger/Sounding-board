@@ -217,13 +217,13 @@ export default function ConfigSessionsPage() {
             <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
               {/* アプローチ */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">アプローチ</p>
+                <p className="text-xs font-semibold text-gray-500 mb-1">アプローチ方法や会話の中で重視すべき点</p>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{config.approach}</p>
               </div>
 
               {/* 重視すべき点 */}
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">重視すべき点</p>
+                <p className="text-xs font-semibold text-gray-500 mb-1">会話を進める中で生徒に到達して欲しいゴール像</p>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{config.important_points}</p>
               </div>
 
