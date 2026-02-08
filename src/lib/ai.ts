@@ -71,7 +71,7 @@ export async function callAIStream({
     },
     body: JSON.stringify({
       model: 'gpt-5-mini',
-      max_completion_tokens: 1500,
+      max_completion_tokens: 5000,
       stream: true,
       messages: [
         { role: 'system', content: systemPrompt },
