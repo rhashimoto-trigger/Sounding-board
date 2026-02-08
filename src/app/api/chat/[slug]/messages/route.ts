@@ -92,12 +92,12 @@ export async function POST(
 
 【テーマ】${config.theme}
 【アプローチ】${config.approach}
-【重視すべき点】${config.important_points}`
+【重視すべき点】${config.important_points}
 
 【重要な制約】
 - 回答は簡潔に、2-3段落（200文字程度）以内にまとめてください
 - 生徒が理解しやすいよう、ポイントを絞って説明してください
-- 必要に応じて質問を1つ返し、対話を続けてください
+- 必要に応じて質問を1つ返し、対話を続けてください`
   
   if (config.source_text) {
     systemPrompt += `\n\n【参照資料】\n${config.source_text}`
