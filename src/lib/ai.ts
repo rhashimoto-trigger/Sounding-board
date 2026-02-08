@@ -23,7 +23,7 @@ export async function callAI({
     },
     body: JSON.stringify({
       model: 'gpt-5-mini',
-      max_completion_tokens: 1500,
+      max_completion_tokens: 5000,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages,
