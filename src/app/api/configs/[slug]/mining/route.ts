@@ -69,7 +69,7 @@ async function generateSummary(sessionId: string, theme: string): Promise<string
 ${conversation}`,
       },
     ],
-    max_completion_tokens: 500,
+    max_completion_tokens: 5000,
   })
 
   return completion.choices[0].message.content || '（要約失敗）'
@@ -164,7 +164,7 @@ ${summariesText}
 ※ JSONのみを出力し、他の説明は不要です`,
       },
     ],
-    max_completion_tokens: 2000,
+    max_completion_tokens: 5000,
   })
 
   const resultText = completion.choices[0].message.content || '{}'
