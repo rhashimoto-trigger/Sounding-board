@@ -58,15 +58,17 @@ async function generateSummary(sessionId: string, theme: string): Promise<string
     .map((m) => `${m.role === 'user' ? '生徒' : 'AI'}: ${m.content}`)
     .join('\n\n')
 
-  // OpenAI APIで要約生成
+  // OpenAI APIで要約生成（先生向け）
   const completion = await openai.chat.completions.create({
     model: 'gpt-5-mini',
     messages: [
       {
         role: 'user',
-        content: `以下は「${theme}」についての生徒とAIの会話です。この会話を3-5文で要約してください。生徒の主な悩みや関心事、相談内容を中心にまとめてください。
+        content: `以下は「${theme}」についての生徒とAIの会話です。
 
-${conversation}`,
+${conversation}
+
+この会話を先生向けに3-5文で要約してください。生徒が何を話し、どんなことを考えていて、どんな状態にあるかを先生が把握できるようまとめてください。`,
       },
     ],
     max_completion_tokens: 5000,
