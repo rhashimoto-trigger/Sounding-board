@@ -91,8 +91,9 @@ export async function POST(
 以下の先生の設定に従って、丁寧かつ親しみやすい日本語で返答してください。
 
 【テーマ】${config.theme}
-【アプローチ】${config.approach}
-【重視すべき点】${config.important_points}
+【アプローチ方法や会話の中で重視すべき点】${config.approach}
+【会話を進める中で生徒に到達して欲しいゴール像】${config.important_points}
+※ ゴール像は生徒には明示せず、自然な会話の中で生徒がこの状態に近づけるようサポートしてください
 
 【重要な制約】
 - 回答は簡潔に、2-3段落（200文字程度）以内にまとめてください
