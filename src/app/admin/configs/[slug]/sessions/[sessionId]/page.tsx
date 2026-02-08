@@ -15,6 +15,7 @@ interface SessionDetail {
     status: 'active' | 'paused' | 'completed'
     summary: string | null
     advice: string | null
+    next_hint: string | null
     recovery_code: string
     hide_messages_from_teacher: boolean
     created_at: string
@@ -146,31 +147,50 @@ export default function SessionDetailPage() {
           </div>
         </div>
 
-        {/* 要約・アドバイスセクション */}
+       {/* 要約・生徒向け表示内容セクション */}
         {(session.summary || session.advice) && (
           <div className="mb-6">
+            {/* 先生向け要約 */}
             {session.summary && (
               <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-3">
                 <div className="flex items-center gap-2 mb-2">
                   <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  <span className="text-blue-700 text-sm font-semibold">要約</span>
+                  <span className="text-blue-700 text-sm font-semibold">先生向け要約</span>
                 </div>
                 <p className="text-blue-800 text-sm leading-relaxed">{session.summary}</p>
               </div>
             )}
-            {session.advice && (
-              <div className="bg-green-50 border border-green-100 rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            
+            {/* 生徒向け表示内容 */}
+            {(session.advice || session.next_hint) && (
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
-                  <span className="text-green-700 text-xs font-semibold">整理内容</span>
+                  <span className="text-gray-700 text-sm font-semibold">生徒向けに表示している内容</span>
                 </div>
-                <div className="text-green-800 text-sm leading-relaxed prose prose-sm prose-green">
-                  <ReactMarkdown>{session.advice}</ReactMarkdown>
-                </div>
+                
+                {session.advice && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-gray-500 mb-1">これまでに話したこと</p>
+                    <div className="text-gray-700 text-sm leading-relaxed prose prose-sm">
+                      <ReactMarkdown>{session.advice}</ReactMarkdown>
+                    </div>
+                  </div>
+                )}
+                
+                {session.next_hint && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">考えてみると良いこと</p>
+                    <div className="text-gray-700 text-sm leading-relaxed prose prose-sm">
+                      <ReactMarkdown>{session.next_hint}</ReactMarkdown>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
