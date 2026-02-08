@@ -75,7 +75,7 @@ ${conversation}
   const completion = await openai.chat.completions.create({
     model: 'gpt-5-mini',
     messages: [{ role: 'user', content: prompt }],
-    max_completion_tokens: 1000,
+    max_completion_tokens: 5000,
   })
 
   const resultText = completion.choices[0].message.content || '{}'
